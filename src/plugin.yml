@@ -1,0 +1,20 @@
+name: CommandWhitelister
+version: 0.1.0
+description: Manages who is allowed to use commands.
+author: Majora320
+website: http://lupinenetwork.com
+main: org.majora320.commandwhitelister.Main
+
+commands:
+    commandwhitelister:
+        description: Manages who is allowed to use commands.
+        permission: commandwhitelister.use
+        usage: "§cUsage: /commandwhitelister world rank command [subcommand...] (yes|no|on|off)"
+
+permissions:
+    commandwhitelister.use:
+        description: Lets you manage who is allowed to use commands.
+    commandwhitelister.bypass:
+        description: Lets you bypass being restricted by the whitelister.
+        # Just for clarity
+        default: op

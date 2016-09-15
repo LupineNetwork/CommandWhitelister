@@ -1,0 +1,16 @@
+mysql:
+    driver: com.mysql.jdbc.Driver
+    # Change this to your actual database url
+    url: jdbc:mysql:localhost/test
+    username: user
+    password: secure
+    
+    # Where the actual information is stored
+    primary-table-name: command_whitelister
+    # Where lists of command arguments are stored
+    argument-table-name: command_whitelister_arguments
+
+messages:
+    # {0} is replaced by the command name (without the leading slash)
+    blacklisted-error-message: "§cYou do not have permission to execute this command!"
+    
