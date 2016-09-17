@@ -19,12 +19,14 @@ package org.majora320.commandwhitelister;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.majora320.commandwhitelister.database.WhitelistDatabase;
@@ -48,8 +50,8 @@ public class CommandListener implements Listener {
     // We need raw strings in java!
     private static final Pattern COMMAND_PATTERN = Pattern.compile("(([^\" ]|\\\\\\\\\")+|\"(\\\\\\\\.|[^\"\\\\\\\\])*\")\\S*");
 
-    @EventHandler
-    public void onCommandPreprocess(PlayerCommandPreprocessEvent evt) throws WhitelistDatabaseException {
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onCommandPreprocess(PlayerCommandPreprocessEvent evt) {
         if (evt.getPlayer().hasPermission("commandwhitelister.bypass"))
             return;
         
@@ -68,7 +70,12 @@ public class CommandListener implements Listener {
             args.add(matt.group(1));
         }
         
-        List<String> allows = database.get(evt.getPlayer().getWorld().getName(), label, args);
+        List<String> allows;
+        try {
+            allows = database.get(evt.getPlayer().getWorld().getName(), label, args);
+        } catch (WhitelistDatabaseException ex) {
+            throw new RuntimeException(ex);
+        }
 
         boolean allow = label.equals("commandwhitelister")
                 || allows.stream()

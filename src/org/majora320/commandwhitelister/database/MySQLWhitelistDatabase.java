@@ -30,9 +30,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.bukkit.Bukkit;
 import org.majora320.commandwhitelister.Constants;
 import org.majora320.commandwhitelister.util.SQLUtil;
 
@@ -103,7 +100,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
      */
     protected void insertArguments(byte[] id, List<String> args) throws SQLException {
         Blob idBlob = conn.createBlob();
-        idBlob.setBytes(0, id);
+        idBlob.setBytes(1, id);
 
         try (PreparedStatement stmt = conn.prepareStatement("INSERT INTO " + argumentTableName + " VALUES(?, ?)")) {
             stmt.setBlob(2, idBlob);
@@ -148,9 +145,9 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
         List<String> ret = new ArrayList<>();
 
         try (Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT * FROM " + primaryTableName
-                        + (world.equals("*") ? "" : " WHERE (world = " + world + ") AND") // Handle wildcards
-                        + "(command = " + command + ")")) {
+                ResultSet rs = stmt.executeQuery("SELECT * FROM " + primaryTableName + " WHERE "
+                        + (world.equals("*") ? "" : "(world = '" + world + "') AND") // Handle wildcards
+                        + "(command = '" + command + "')")) {
 
             // Check if each row's arguments match the args parameter
             // If they do, add it to ret
@@ -209,7 +206,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                             return result + new String(randomBytes) + element;
                         }).getBytes());
 
-                        idBlob.setBytes(0, argsId);
+                        idBlob.setBytes(1, argsId);
                     } while (allArgsIds.contains(idBlob));
                 } catch (NoSuchAlgorithmException ex) {
                     throw new RuntimeException("MessageDigest does not contain the required implementation for SHA-1 algorithm", ex);
@@ -228,8 +225,8 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                 }
             } else {
                 try (Statement stmt = conn.createStatement();
-                        PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + "WHERE (world = " + world + ") AND (group_name = " + group + ") AND (command = " + command + ") AND (args_list_id = ?)");
-                        ResultSet rs = stmt.executeQuery("SELECT * FROM " + primaryTableName + " WHERE (world = " + world + ") AND (group_name = " + group + ") AND (command = " + command + ")")) {
+                        PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + "WHERE (world = '" + world + "') AND (group_name = '" + group + "') AND (command = '" + command + "') AND (args_list_id = ?)");
+                        ResultSet rs = stmt.executeQuery("SELECT * FROM " + primaryTableName + " WHERE (world = '" + world + "') AND (group_name = '" + group + "') AND (command = '" + command + "')")) {
                     ResultSetMetaData rsmd = rs.getMetaData();
                     
                     while (rs.next()) {
