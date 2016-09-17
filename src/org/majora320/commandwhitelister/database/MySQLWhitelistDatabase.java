@@ -121,14 +121,11 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
      * @return the retrieved records
      * @throws SQLException if there is an error with the database
      */
-    protected List<String> getArguments(byte[] id) throws SQLException {
+    protected List<String> getArguments(Blob id) throws SQLException {
         List<String> ret = new ArrayList<>();
 
-        Blob idBlob = conn.createBlob();
-        idBlob.setBytes(0, id);
-
         try (PreparedStatement stmt = conn.prepareStatement("SELECT * FROM " + argumentTableName + " WHERE (args_list_id = ?)")) {
-            stmt.setBlob(1, idBlob);
+            stmt.setBlob(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     ret.add(rs.getString("value"));
@@ -139,12 +136,9 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
         return ret;
     }
     
-    protected void removeArguments(byte[] id) throws SQLException {
-        Blob idBlob = conn.createBlob();
-        idBlob.setBytes(0, id);
-        
+    protected void removeArguments(Blob id) throws SQLException {
         try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM " + argumentTableName + " WHERE (args_list_id = ?)")) {
-            stmt.setBlob(1, idBlob);
+            stmt.setBlob(1, id);
             stmt.execute();
         }
     }
@@ -161,10 +155,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
             // Check if each row's arguments match the args parameter
             // If they do, add it to ret
             while (rs.next()) {
-                Blob idBlob = rs.getBlob("args_list_id");
-                byte[] id = idBlob.getBytes(1, (int) idBlob.length());
-
-                List<String> rowArgs = getArguments(id);
+                List<String> rowArgs = getArguments(rs.getBlob("args_list_id"));
 
                 // If args starts with rowArgs
                 if (rowArgs.equals(args.subList(0, rowArgs.size() - 1))) {
@@ -237,13 +228,18 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                 }
             } else {
                 try (Statement stmt = conn.createStatement();
+                        PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + "WHERE (world = " + world + ") AND (group_name = " + group + ") AND (command = " + command + ") AND (args_list_id = ?)");
                         ResultSet rs = stmt.executeQuery("SELECT * FROM " + primaryTableName + " WHERE (world = " + world + ") AND (group_name = " + group + ") AND (command = " + command + ")")) {
                     ResultSetMetaData rsmd = rs.getMetaData();
                     
-                    if (SQLUtil.getRows(rs) == 1) {
-                        
-                    } else {
-                        
+                    while (rs.next()) {
+                        List<String> rowArgs = getArguments(rs.getBlob("args_list_id"));
+                        // If it matches, remove it
+                        if (rowArgs.equals(args)) {
+                            delete.setBlob(1, rs.getBlob("args_list_id"));
+                            delete.execute();
+                            removeArguments(rs.getBlob("args_list_id"));
+                        }
                     }
                 }
             }
