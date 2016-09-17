@@ -17,6 +17,7 @@
 package org.majora320.commandwhitelister.util;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
@@ -36,5 +37,25 @@ public class SQLUtil {
      */
     public static boolean doesTableExist(Connection conn, String tableName) throws SQLException {
         return conn.getMetaData().getTables(null, null, tableName, new String[]{ "TABLE" }).next();
+    }
+    
+    /**
+     * Get the number of rows in table.
+     * @param table the table to grab the number of rows from
+     * @return the number of rows
+     */
+    public static int getRows(ResultSet table) throws SQLException {
+        if (table == null)
+            return 0;
+        
+        int rows;
+        try {
+            table.last();
+            rows = table.getRow();
+        } finally {
+            table.beforeFirst();
+        }
+        
+        return rows;
     }
 }
