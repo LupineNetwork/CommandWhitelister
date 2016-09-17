@@ -32,10 +32,10 @@ public interface WhitelistDatabase extends AutoCloseable {
      * @param world the world in which the result is valid in
      * @param command the command to be validated
      * @param args any arguments to the command
-     * @return a map from the groups this entry is valid for to a boolean if they are valid
+     * @return a list of groups for which the result is valid for
      * @throws WhitelistDatabaseException if there is an error with the database
      */
-    public Map<String, Boolean> get(String world, String command, List<String> args) throws WhitelistDatabaseException;
+    public List<String> get(String world, String command, List<String> args) throws WhitelistDatabaseException;
     /**
      * Sets a value in the database.
      * 

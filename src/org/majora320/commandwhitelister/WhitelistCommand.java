@@ -22,7 +22,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
 /**
- * The logic for the /commandwhitelist command.
+ * The logic for the /commandwhitelister command.
  * 
  * @author Moses Miller <pre><Majora320@gmail.com></pre>
  */

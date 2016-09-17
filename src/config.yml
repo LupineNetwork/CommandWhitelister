@@ -1,7 +1,7 @@
 mysql:
     driver: com.mysql.jdbc.Driver
     # Change this to your actual database url
-    url: jdbc:mysql:localhost/test
+    url: jdbc:mysql://localhost/test
     username: user
     password: secure
     

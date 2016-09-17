@@ -21,8 +21,10 @@ import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,11 +78,11 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
     private void initializeDatabase() throws SQLException {
         try (Statement stmt = conn.createStatement()) {
             if (!SQLUtil.doesTableExist(conn, primaryTableName)) {
-                stmt.execute("CREATE TABLE " + primaryTableName + "(world VARCHAR(255), group VARCHAR(255), command VARCHAR(255), args_list_id BLOB(32))");
+                stmt.execute("CREATE TABLE " + primaryTableName + "(id BIGINT NOT NULL AUTO_INCREMENT, world VARCHAR(255), group_name VARCHAR(255), command VARCHAR(255), args_list_id BLOB(16), PRIMARY KEY(id))");
             }
             
             if (!SQLUtil.doesTableExist(conn, argumentTableName)) {
-                stmt.execute("CREATE TABLE " + argumentTableName + "(value VARCHAR(255), args_list_id BLOB(32))");
+                stmt.execute("CREATE TABLE " + argumentTableName + "(value VARCHAR(255), args_list_id BLOB(16))");
             }
         }
     }
@@ -88,6 +90,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
     /**
      * Inserts a list of arguments into the database.
      * 
+     * @param id the id of the arguments to insert
      * @param args the arguments to insert
      * @throws SQLException if there is an error with the database
      */
@@ -96,17 +99,66 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
         idBlob.setBytes(0, id);
         
         try (PreparedStatement stmt = conn.prepareStatement("INSERT INTO " + argumentTableName + " VALUES(?, ?)")) {
-            stmt.setBlob(1, idBlob);
+            stmt.setBlob(2, idBlob);
             for (String arg : args) {
-                stmt.setString(0, arg);
+                stmt.setString(1, arg);
                 stmt.execute();
             }
         }
     }
     
+    /**
+     * Retrieves a list of arguments from the database.
+     * 
+     * @param id the id of the arguments to inset
+     * @return the retrieved records
+     * @throws SQLException if there is an error with the database
+     */
+    private List<String> getArguments(byte[] id) throws SQLException {
+        List<String> ret = new ArrayList<>();
+        
+        Blob idBlob = conn.createBlob();
+        idBlob.setBytes(0, id);
+        
+        try (PreparedStatement stmt = conn.prepareStatement("SELECT * FROM " + argumentTableName + " WHERE (args_list_id = ?)")) {
+            stmt.setBlob(1, idBlob);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    ret.add(rs.getString("value"));
+                }
+            }
+        }
+        
+        return ret;
+    }
+    
     @Override
-    public Map<String, Boolean> get(String world, String command, List<String> args) throws WhitelistDatabaseException {
-        Map<String, Boolean> ret = new HashMap<>();
+    public List<String> get(String world, String command, List<String> args) throws WhitelistDatabaseException {
+        List<String> ret = new ArrayList<>();
+        
+        try (Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT * FROM " + primaryTableName + 
+                        (world.equals("*") ? "" : " WHERE (world = " + world + ") AND") // Handle wildcards
+                        + "(command = " + command + ")")) {
+             
+            // Check if each row's arguments match the args parameter
+            // If they do, add it to ret
+            while (rs.next()) {
+                Blob idBlob = rs.getBlob("args_list_id");
+                byte[] id = idBlob.getBytes(1, (int)idBlob.length());
+                
+                List<String> rowArgs = getArguments(id);
+                
+                // If args starts with rowArgs
+                if (rowArgs.equals(args.subList(0, rowArgs.size() - 1))) {
+                    // Add it
+                    ret.add(rs.getString("group_name"));
+                }
+            }
+             
+        } catch (SQLException ex) {
+            throw new WhitelistDatabaseException(ex);
+        }
         
         return ret;
     }

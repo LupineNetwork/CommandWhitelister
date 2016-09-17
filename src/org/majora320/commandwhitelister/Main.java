@@ -60,7 +60,7 @@ public class Main extends JavaPlugin {
         String username = getConfig().getString("mysql.username");
         String password = getConfig().getString("mysql.password");
         String primaryTableName = getConfig().getString("mysql.primary-table-name", Constants.DEFAULT_PRIMARY_TABLE_NAME);
-        String argumentTableName = getConfig().getString("argument-table-name", Constants.DEFAULT_ARGUMENT_TABLE_NAME);
+        String argumentTableName = getConfig().getString("mysql.argument-table-name", Constants.DEFAULT_ARGUMENT_TABLE_NAME);
         
         try {
             database = new MySQLWhitelistDatabase(url, username, password, primaryTableName, argumentTableName, driver);
@@ -69,7 +69,7 @@ public class Main extends JavaPlugin {
         }
         
         getServer().getPluginManager().registerEvents(new CommandListener(database, getConfig()), this);
-        getCommand("commandwhitelist").setExecutor(new WhitelistCommand(database));
+        getCommand("commandwhitelister").setExecutor(new WhitelistCommand(database));
     }
     
     @Override
