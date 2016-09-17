@@ -30,6 +30,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Level;
+import org.bukkit.Bukkit;
 import org.majora320.commandwhitelister.Constants;
 import org.majora320.commandwhitelister.util.SQLUtil;
 
@@ -103,9 +105,9 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
         idBlob.setBytes(1, id);
 
         try (PreparedStatement stmt = conn.prepareStatement("INSERT INTO " + argumentTableName + " VALUES(?, ?)")) {
-            stmt.setBlob(2, idBlob);
             for (String arg : args) {
                 stmt.setString(1, arg);
+                stmt.setBlob(2, idBlob);
                 stmt.execute();
             }
         }
@@ -146,16 +148,16 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
 
         try (Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery("SELECT * FROM " + primaryTableName + " WHERE "
-                        + (world.equals("*") ? "" : "(world = '" + world + "') AND") // Handle wildcards
-                        + "(command = '" + command + "')")) {
+                        + "((world = '*') OR (world = '" + world + "'))" // Handle wildcards
+                        + "AND (command = '" + command + "')")) {
 
             // Check if each row's arguments match the args parameter
             // If they do, add it to ret
             while (rs.next()) {
                 List<String> rowArgs = getArguments(rs.getBlob("args_list_id"));
-
+                
                 // If args starts with rowArgs
-                if (rowArgs.equals(args.subList(0, rowArgs.size() - 1))) {
+                if (args.size() >= rowArgs.size() && rowArgs.equals(args.subList(0, rowArgs.size()))) {
                     // Add it
                     ret.add(rs.getString("group_name"));
                 }
@@ -170,15 +172,16 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
 
     @Override
     public void set(boolean on, String world, String group, String command, List<String> args) throws WhitelistDatabaseException {
-        boolean isOn = get(world, command, args).stream().filter(group2 -> group2.equals(group)).toArray().length != 0;
-
-        // Nothing to do if we are in that state already
-        if (isOn == on) {
-            return;
-        }
-
-        try {
+        try (Statement stmt = conn.createStatement();
+                ResultSet similar = stmt.executeQuery("SELECT * FROM " + primaryTableName + " WHERE (world = '" + world + "') AND (group_name = '" + group + "') AND (command = '" + command + "')")) {
             if (on) {
+                while (similar.next()) {
+                    if (getArguments(similar.getBlob("args_list_id")).equals(args))
+                        return;
+                }
+                
+                similar.beforeFirst();
+                
                 byte[] argsId;
                 Blob idBlob = conn.createBlob();
 
@@ -186,13 +189,11 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                     List<Blob> allArgsIds = new ArrayList<>();
 
                     // Collect every args_list_id field to make sure it dosen't conflict with ours
-                    try (Statement stmt = conn.createStatement();
-                            ResultSet rs = stmt.executeQuery("SELECT args_list_id FROM " + primaryTableName)) {
+                    ResultSet argsIdsRow = stmt.executeQuery("SELECT args_list_id FROM " + primaryTableName);
 
-                        while (rs.next()) {
-                            Blob id = rs.getBlob("args_list_id");
-                            allArgsIds.add(id);
-                        }
+                    while (argsIdsRow.next()) {
+                        Blob id = argsIdsRow.getBlob("args_list_id");
+                        allArgsIds.add(id);
                     }
 
                     do {
@@ -213,29 +214,25 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                 }
 
                 // Insert everything
-                try (PreparedStatement stmt = conn.prepareStatement("INSERT INTO " + argumentTableName + " VALUES(?, ?, ?, ?)")) {
-                    stmt.setString(1, world);
-                    stmt.setString(2, group);
-                    stmt.setString(3, command);
-                    stmt.setBlob(4, idBlob);
+                try (PreparedStatement insert = conn.prepareStatement("INSERT INTO " + primaryTableName + " VALUES(?, ?, ?, ?)")) {
+                    insert.setString(1, world);
+                    insert.setString(2, group);
+                    insert.setString(3, command);
+                    insert.setBlob(4, idBlob);
 
-                    stmt.execute();
+                    insert.execute();
 
                     insertArguments(argsId, args);
                 }
             } else {
-                try (Statement stmt = conn.createStatement();
-                        PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + "WHERE (world = '" + world + "') AND (group_name = '" + group + "') AND (command = '" + command + "') AND (args_list_id = ?)");
-                        ResultSet rs = stmt.executeQuery("SELECT * FROM " + primaryTableName + " WHERE (world = '" + world + "') AND (group_name = '" + group + "') AND (command = '" + command + "')")) {
-                    ResultSetMetaData rsmd = rs.getMetaData();
-                    
-                    while (rs.next()) {
-                        List<String> rowArgs = getArguments(rs.getBlob("args_list_id"));
+                try (PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + " WHERE (world = '" + world + "') AND (group_name = '" + group + "') AND (command = '" + command + "') AND (args_list_id = ?)")) {
+                    while (similar.next()) {
+                        List<String> rowArgs = getArguments(similar.getBlob("args_list_id"));
                         // If it matches, remove it
                         if (rowArgs.equals(args)) {
-                            delete.setBlob(1, rs.getBlob("args_list_id"));
+                            delete.setBlob(1, similar.getBlob("args_list_id"));
                             delete.execute();
-                            removeArguments(rs.getBlob("args_list_id"));
+                            removeArguments(similar.getBlob("args_list_id"));
                         }
                     }
                 }

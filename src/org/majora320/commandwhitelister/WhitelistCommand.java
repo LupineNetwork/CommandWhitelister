@@ -18,8 +18,7 @@ package org.majora320.commandwhitelister;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.bukkit.Bukkit;
 import org.majora320.commandwhitelister.database.WhitelistDatabase;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

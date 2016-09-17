@@ -18,9 +18,6 @@ package org.majora320.commandwhitelister;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
@@ -76,7 +73,7 @@ public class CommandListener implements Listener {
         } catch (WhitelistDatabaseException ex) {
             throw new RuntimeException(ex);
         }
-
+        
         boolean allow = label.equals("commandwhitelister")
                 || allows.stream()
                 .filter(group -> group.equals("*") || evt.getPlayer().hasPermission("group." + group))
