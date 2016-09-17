@@ -16,4 +16,3 @@ permissions:
         description: Lets you manage who is allowed to use commands.
     commandwhitelister.bypass:
         description: Lets you bypass being restricted by the whitelister.
-        default: false
