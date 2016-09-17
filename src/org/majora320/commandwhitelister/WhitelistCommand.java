@@ -18,7 +18,7 @@ package org.majora320.commandwhitelister;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.md_5.bungee.api.ChatColor;
+import org.bukkit.ChatColor;
 import org.majora320.commandwhitelister.database.WhitelistDatabase;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
