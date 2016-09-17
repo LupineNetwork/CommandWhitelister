@@ -17,7 +17,6 @@
 package org.majora320.commandwhitelister.database;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * A contract for a database class.

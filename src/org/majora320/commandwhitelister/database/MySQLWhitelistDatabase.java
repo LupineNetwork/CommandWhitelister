@@ -24,14 +24,11 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
-import org.bukkit.Bukkit;
 import org.majora320.commandwhitelister.Constants;
 import org.majora320.commandwhitelister.util.SQLUtil;
 

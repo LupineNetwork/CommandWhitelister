@@ -43,6 +43,7 @@ public class SQLUtil {
      * Get the number of rows in table.
      * @param table the table to grab the number of rows from
      * @return the number of rows
+     * @throws java.sql.SQLException if there is an error with the database
      */
     public static int getRows(ResultSet table) throws SQLException {
         if (table == null)
