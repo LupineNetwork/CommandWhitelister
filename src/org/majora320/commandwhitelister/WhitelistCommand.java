@@ -18,6 +18,7 @@ package org.majora320.commandwhitelister;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.md_5.bungee.api.ChatColor;
 import org.majora320.commandwhitelister.database.WhitelistDatabase;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -54,19 +55,25 @@ public class WhitelistCommand implements CommandExecutor {
         String onOffText = args[args.length - 1];
         boolean on;
         
-        if (onOffText.equals("on"))
-            on = true;
-        else if (onOffText.equals("off"))
-            on = false;
-        else
-            return false;
+        switch (onOffText) {
+            case "on":
+                on = true;
+                break;
+            case "off":
+                on = false;
+                break;
+            default:
+                return false;
+        }
         
         try {
             database.set(on, world, group, command, subs);
         } catch (WhitelistDatabaseException ex) {
+            sender.sendMessage(ChatColor.RED + "Error modifing the database! Check the logs for details.");
             throw new RuntimeException(ex);
         }
         
+        sender.sendMessage(ChatColor.GREEN + "Successfully modified the database!");
         return true;
     } 
 }
