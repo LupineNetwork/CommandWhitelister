@@ -51,7 +51,7 @@ public class CommandListener implements Listener {
         if (evt.getPlayer().hasPermission("commandwhitelister.bypass"))
             return;
         
-        String cmd = evt.getMessage().substring(1); // Remove leading slash
+        String cmd = evt.getMessage().trim().substring(1); // Remove leading slash
         Matcher matt = COMMAND_PATTERN.matcher(cmd);
 
         String label;
