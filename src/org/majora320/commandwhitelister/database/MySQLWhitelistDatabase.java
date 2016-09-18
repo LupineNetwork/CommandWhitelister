@@ -211,7 +211,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                 }
 
                 // Insert everything
-                try (PreparedStatement insert = conn.prepareStatement("INSERT INTO " + primaryTableName + " VALUES(?, ?, ?, ?)")) {
+                try (PreparedStatement insert = conn.prepareStatement("INSERT INTO " + primaryTableName + "(world, group_name, command, args_list_id) VALUES (?, ?, ?, ?)")) {
                     insert.setString(1, world);
                     insert.setString(2, group);
                     insert.setString(3, command);

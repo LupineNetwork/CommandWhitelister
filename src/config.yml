@@ -12,5 +12,5 @@ mysql:
 
 messages:
     # {0} is replaced by the command name (without the leading slash)
-    blacklisted-error-message: "§cYou do not have permission to execute this command!"
+    blacklisted-error-message: "&cYou do not have permission to execute this command!"
     

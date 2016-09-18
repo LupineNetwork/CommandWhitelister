@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -27,6 +28,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.majora320.commandwhitelister.database.WhitelistDatabase;
 import org.majora320.commandwhitelister.database.WhitelistDatabaseException;
+import ru.tehkode.permissions.bukkit.PermissionsEx;
 
 /**
  * The class which handles the command request.
@@ -44,7 +46,7 @@ public class CommandListener implements Listener {
 
     // Complicated magic :)
     // We need raw strings in java!
-    private static final Pattern COMMAND_PATTERN = Pattern.compile("(([^\" ]|\\\\\\\\\")+|\"(\\\\\\\\.|[^\"\\\\\\\\])*\")\\S*");
+    private static final Pattern COMMAND_PATTERN = Pattern.compile("([^ ]+)\\S+");
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onCommandPreprocess(PlayerCommandPreprocessEvent evt) {
@@ -75,12 +77,12 @@ public class CommandListener implements Listener {
         
         boolean allow = label.equals("commandwhitelister")
                 || allows.stream()
-                .filter(group -> group.equals("*") || evt.getPlayer().hasPermission("group." + group))
+                .filter(group -> group.equals("*") || PermissionsEx.getUser(evt.getPlayer()).inGroup(group))
                         .toArray().length != 0;
 
         if (!allow) {
             evt.setCancelled(true);
-            evt.getPlayer().sendMessage(config.getString("blacklisted-error-message", "§cYou do not have permission to execute this command!"));
+            evt.getPlayer().sendMessage(ChatColor.translateAlternateColorCodes('&', config.getString("messages.blacklisted-error-message", "&cYou do not have permission to execute this command!")));
         }
     }
 }
