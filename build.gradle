@@ -1,0 +1,35 @@
+apply plugin: 'java'
+
+sourceCompatibility = '1.8'
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+task copyToServer(type: Copy, dependsOn: jar) {
+    from('build/libs/CommandWhitelister.jar')
+    into('/srv/craftbukkit/plugins')
+}
+
+task run(dependsOn: copyToServer)
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://oss.sonatype.org/content/groups/public/'
+        name 'Bungeecord repo'
+    }
+    maven {
+        url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
+        name 'SpigotMC repo'
+    }
+    maven {
+        url 'http://pex-repo.aoeu.xyz/'
+        name 'PermissionsEX repo'
+    }
+}
+
+dependencies {
+    testCompile 'junit:junit:4.12'
+    compile 'org.bukkit:bukkit:1.10.2-R0.1-SNAPSHOT'
+    compile 'org.spigotmc:spigot-api:1.10.2-R0.1-SNAPSHOT'
+    compile 'ru.tehkode:PermissionsEx:1.23.1'
+    compile 'mysql:mysql-connector-java:6.0.4'
+}
