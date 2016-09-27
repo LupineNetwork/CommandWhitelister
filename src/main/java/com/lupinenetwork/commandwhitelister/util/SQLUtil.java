@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.majora320.commandwhitelister.util;
+package com.lupinenetwork.commandwhitelister.util;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

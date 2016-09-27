@@ -14,23 +14,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.majora320.commandwhitelister.database;
+package com.lupinenetwork.commandwhitelister;
+
+import java.sql.Driver;
+import java.sql.SQLException;
 
 /**
- * A wrapper for handling exceptions.
+ * Program-wide constants.
  * 
  * @author Moses Miller <pre><Majora320@gmail.com></pre>
  */
-public class WhitelistDatabaseException extends Exception {
-    public WhitelistDatabaseException(String message) {
-        super(message);
-    }
+public final class Constants {
+    public static final String DEFAULT_URL = "jdbc:mysql:localhost/test";
+    public static final String DEFAULT_DRIVER_NAME = "com.mysql.jdbc.Driver";
+    public static final String DEFAULT_PRIMARY_TABLE_NAME = "command_whitelister";
+    public static final String DEFAULT_ARGUMENT_TABLE_NAME = "command_whitelister_arguments";
     
-    public WhitelistDatabaseException(Throwable cause) {
-        super(cause);
-    }
-    
-    public WhitelistDatabaseException(String message, Throwable cause) {
-        super(message, cause);
+    // Workaround to make up for the fact that constants can't throw
+    public static final Driver getDefaultDriver() throws SQLException {
+        return new com.mysql.jdbc.Driver();
     }
 }

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.majora320.commandwhitelister.database;
+package com.lupinenetwork.commandwhitelister.database;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -29,8 +29,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import org.majora320.commandwhitelister.Constants;
-import org.majora320.commandwhitelister.util.SQLUtil;
+import com.lupinenetwork.commandwhitelister.Constants;
+import com.lupinenetwork.commandwhitelister.util.SQLUtil;
 
 /**
  * A mysql implementation of the database.

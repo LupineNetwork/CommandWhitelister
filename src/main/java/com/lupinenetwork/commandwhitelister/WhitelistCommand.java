@@ -14,16 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.majora320.commandwhitelister;
+package com.lupinenetwork.commandwhitelister;
 
 import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.ChatColor;
-import org.majora320.commandwhitelister.database.WhitelistDatabase;
+import com.lupinenetwork.commandwhitelister.database.WhitelistDatabase;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.majora320.commandwhitelister.database.WhitelistDatabaseException;
+import com.lupinenetwork.commandwhitelister.database.WhitelistDatabaseException;
 
 /**
  * The logic for the /commandwhitelister command.

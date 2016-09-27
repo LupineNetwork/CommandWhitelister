@@ -14,15 +14,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.majora320.commandwhitelister;
+package com.lupinenetwork.commandwhitelister;
 
-import org.majora320.commandwhitelister.database.MySQLWhitelistDatabase;
+import com.lupinenetwork.commandwhitelister.Constants;
+import com.lupinenetwork.commandwhitelister.CommandListener;
+import com.lupinenetwork.commandwhitelister.database.MySQLWhitelistDatabase;
 import java.sql.Driver;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.majora320.commandwhitelister.database.WhitelistDatabase;
-import org.majora320.commandwhitelister.database.WhitelistDatabaseException;
+import com.lupinenetwork.commandwhitelister.database.WhitelistDatabase;
+import com.lupinenetwork.commandwhitelister.database.WhitelistDatabaseException;
 
 /**
  * The main plugin class.
