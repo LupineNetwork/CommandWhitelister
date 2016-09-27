@@ -3,12 +3,13 @@ apply plugin: 'java'
 sourceCompatibility = '1.8'
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
-task copyToServer(type: Copy, dependsOn: jar) {
+task deploy(type: Copy, dependsOn: jar) {
     from('build/libs/CommandWhitelister.jar')
     into('/srv/craftbukkit/plugins')
 }
 
-task run(dependsOn: copyToServer)
+// For netbeans - one-click deploy
+task run(dependsOn: deploy)
 
 repositories {
     mavenCentral()
