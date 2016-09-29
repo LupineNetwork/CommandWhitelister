@@ -20,14 +20,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.bukkit.ChatColor;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import net.md_5.bungee.api.plugin.Listener;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabase;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabaseException;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.connection.Connection;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.event.ChatEvent;
+import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.event.EventHandler;
+import net.md_5.bungee.event.EventPriority;
 import ru.tehkode.permissions.bukkit.PermissionsEx;
 
 /**
@@ -37,9 +40,9 @@ import ru.tehkode.permissions.bukkit.PermissionsEx;
  */
 public class CommandListener implements Listener {
     private final WhitelistDatabase database;
-    private final FileConfiguration config;
+    private final Configuration config;
 
-    public CommandListener(WhitelistDatabase database, FileConfiguration config) {
+    public CommandListener(WhitelistDatabase database, Configuration config) {
         this.database = database;
         this.config = config;
     }
@@ -49,8 +52,15 @@ public class CommandListener implements Listener {
     private static final Pattern COMMAND_PATTERN = Pattern.compile("([^ ]+)\\S+");
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onCommandPreprocess(PlayerCommandPreprocessEvent evt) {
-        if (evt.getPlayer().hasPermission("commandwhitelister.bypass"))
+    public void onChat(ChatEvent evt) {
+        Connection sender = evt.getSender();
+        
+        if (!(sender instanceof ProxiedPlayer))
+            return;
+        
+        ProxiedPlayer player = (ProxiedPlayer)sender;
+        
+        if (player.hasPermission("commandwhitelister.bypass"))
             return;
         
         String cmd = evt.getMessage().trim().substring(1); // Remove leading slash
@@ -70,19 +80,20 @@ public class CommandListener implements Listener {
         
         List<String> allows;
         try {
-            allows = database.get(evt.getPlayer().getWorld().getName(), label, args);
+            allows = database.get(player.getServer().getInfo().getName(), label, args);
         } catch (WhitelistDatabaseException ex) {
             throw new RuntimeException(ex);
         }
         
         boolean allow = label.equals("commandwhitelister")
                 || allows.stream()
-                .filter(group -> group.equals("*") || PermissionsEx.getUser(evt.getPlayer()).inGroup(group))
+                .filter(group -> group.equals("*") || PermissionsEx.getUser(player.getName()).inGroup(group))
                         .toArray().length != 0;
 
         if (!allow) {
             evt.setCancelled(true);
-            evt.getPlayer().sendMessage(ChatColor.translateAlternateColorCodes('&', config.getString("messages.blacklisted-error-message", "&cYou do not have permission to execute this command!")));
+            player.sendMessage(new TextComponent(ChatColor.translateAlternateColorCodes('&', 
+                    config.getString("messages.blacklisted-error-message", "&cYou do not have permission to execute this command!"))));
         }
     }
 }

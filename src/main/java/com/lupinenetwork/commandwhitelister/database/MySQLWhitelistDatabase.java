@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import com.lupinenetwork.commandwhitelister.Constants;
-import com.lupinenetwork.commandwhitelister.util.SQLUtil;
 
 /**
  * A mysql implementation of the database.
@@ -80,7 +79,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
      */
     protected final void initializeDatabase() throws SQLException {
         try (Statement stmt = conn.createStatement()) {
-            stmt.execute("CREATE TABLE IF NOT EXISTS " + primaryTableName + "(id BIGINT NOT NULL AUTO_INCREMENT, world VARCHAR(255), group_name VARCHAR(255), command VARCHAR(255), args_list_id BLOB(20), PRIMARY KEY(id))");
+            stmt.execute("CREATE TABLE IF NOT EXISTS " + primaryTableName + "(id BIGINT NOT NULL AUTO_INCREMENT, server VARCHAR(255), group_name VARCHAR(255), command VARCHAR(255), args_list_id BLOB(20), PRIMARY KEY(id))");
             stmt.execute("CREATE TABLE IF NOT EXISTS " + argumentTableName + "(value VARCHAR(255), args_list_id BLOB(20))");
         }
     }
@@ -135,26 +134,27 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
     }
 
     @Override
-    public List<String> get(String world, String command, List<String> args) throws WhitelistDatabaseException {
+    public List<String> get(String server, String command, List<String> args) throws WhitelistDatabaseException {
         List<String> ret = new ArrayList<>();
 
-        try (Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT * FROM " + primaryTableName + " WHERE "
-                        + "((world = '*') OR (world = '" + world + "'))" // Handle wildcards
-                        + "AND (command = '" + command + "')")) {
+        try (PreparedStatement stmt = conn.prepareStatement("SELECT * FROM " + primaryTableName + " WHERE "
+                        + "((server = '*') OR (server = ?))" // Handle wildcards
+                        + "AND (command = ?)")) {
+            stmt.setString(1, server);
+            stmt.setString(1, command);
+            try (ResultSet rs = stmt.executeQuery()) {
+                // Check if each row's arguments match the args parameter
+                // If they do, add it to ret
+                while (rs.next()) {
+                    List<String> rowArgs = getArguments(rs.getBlob("args_list_id"));
 
-            // Check if each row's arguments match the args parameter
-            // If they do, add it to ret
-            while (rs.next()) {
-                List<String> rowArgs = getArguments(rs.getBlob("args_list_id"));
-                
-                // If args starts with rowArgs
-                if (args.size() >= rowArgs.size() && rowArgs.equals(args.subList(0, rowArgs.size()))) {
-                    // Add it
-                    ret.add(rs.getString("group_name"));
+                    // If args starts with rowArgs
+                    if (args.size() >= rowArgs.size() && rowArgs.equals(args.subList(0, rowArgs.size()))) {
+                        // Add it
+                        ret.add(rs.getString("group_name"));
+                    }
                 }
             }
-
         } catch (SQLException ex) {
             throw new WhitelistDatabaseException(ex);
         }
@@ -163,68 +163,72 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
     }
 
     @Override
-    public void set(boolean on, String world, String group, String command, List<String> args) throws WhitelistDatabaseException {
-        try (Statement stmt = conn.createStatement();
-                ResultSet similar = stmt.executeQuery("SELECT * FROM " + primaryTableName + " WHERE (world = '" + world + "') AND (group_name = '" + group + "') AND (command = '" + command + "')")) {
-            if (on) {
-                while (similar.next()) {
-                    if (getArguments(similar.getBlob("args_list_id")).equals(args))
-                        return;
-                }
-                
-                similar.beforeFirst();
-                
-                byte[] argsId;
-                Blob idBlob = conn.createBlob();
-
-                try {
-                    List<Blob> allArgsIds = new ArrayList<>();
-
-                    // Collect every args_list_id field to make sure it dosen't conflict with ours
-                    ResultSet argsIdsRow = stmt.executeQuery("SELECT args_list_id FROM " + primaryTableName);
-
-                    while (argsIdsRow.next()) {
-                        Blob id = argsIdsRow.getBlob("args_list_id");
-                        allArgsIds.add(id);
+    public void set(boolean on, String server, String group, String command, List<String> args) throws WhitelistDatabaseException {
+        try (PreparedStatement stmt = conn.prepareStatement("SELECT * FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?)")) {
+            stmt.setString(1, server);
+            stmt.setString(2, group);
+            stmt.setString(3, command);
+            try (ResultSet similar = stmt.executeQuery()) {
+                if (on) {
+                    while (similar.next()) {
+                        if (getArguments(similar.getBlob("args_list_id")).equals(args))
+                            return;
                     }
 
-                    do {
-                        // Accumulate into a single string, plus some randomness
-                        // Then hash that
-                        // 3random5you?
-                        Random rand = new Random();
-                        argsId = MessageDigest.getInstance("SHA-1").digest(args.stream().reduce(new String(), (result, element) -> {
-                            byte[] randomBytes = new byte[4];
-                            rand.nextBytes(randomBytes);
-                            return result + new String(randomBytes) + element;
-                        }).getBytes());
+                    similar.beforeFirst();
 
-                        idBlob.setBytes(1, argsId);
-                    } while (allArgsIds.contains(idBlob));
-                } catch (NoSuchAlgorithmException ex) {
-                    throw new RuntimeException("MessageDigest does not contain the required implementation for SHA-1 algorithm", ex);
-                }
+                    byte[] argsId;
+                    Blob idBlob = conn.createBlob();
 
-                // Insert everything
-                try (PreparedStatement insert = conn.prepareStatement("INSERT INTO " + primaryTableName + "(world, group_name, command, args_list_id) VALUES (?, ?, ?, ?)")) {
-                    insert.setString(1, world);
-                    insert.setString(2, group);
-                    insert.setString(3, command);
-                    insert.setBlob(4, idBlob);
+                    try {
+                        List<Blob> allArgsIds = new ArrayList<>();
 
-                    insert.execute();
+                        // Collect every args_list_id field to make sure it dosen't conflict with ours
+                        ResultSet argsIdsRow = stmt.executeQuery("SELECT args_list_id FROM " + primaryTableName);
 
-                    insertArguments(argsId, args);
-                }
-            } else {
-                try (PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + " WHERE (world = '" + world + "') AND (group_name = '" + group + "') AND (command = '" + command + "') AND (args_list_id = ?)")) {
-                    while (similar.next()) {
-                        List<String> rowArgs = getArguments(similar.getBlob("args_list_id"));
-                        // If it matches, remove it
-                        if (rowArgs.equals(args)) {
-                            delete.setBlob(1, similar.getBlob("args_list_id"));
-                            delete.execute();
-                            removeArguments(similar.getBlob("args_list_id"));
+                        while (argsIdsRow.next()) {
+                            Blob id = argsIdsRow.getBlob("args_list_id");
+                            allArgsIds.add(id);
+                        }
+
+                        do {
+                            // Accumulate into a single string, plus some randomness
+                            // Then hash that
+                            // 3random5you?
+                            Random rand = new Random();
+                            argsId = MessageDigest.getInstance("SHA-1").digest(args.stream().reduce(new String(), (result, element) -> {
+                                byte[] randomBytes = new byte[4];
+                                rand.nextBytes(randomBytes);
+                                return result + new String(randomBytes) + element;
+                            }).getBytes());
+
+                            idBlob.setBytes(1, argsId);
+                        } while (allArgsIds.contains(idBlob));
+                    } catch (NoSuchAlgorithmException ex) {
+                        throw new RuntimeException("MessageDigest does not contain the required implementation for SHA-1 algorithm", ex);
+                    }
+
+                    // Insert everything
+                    try (PreparedStatement insert = conn.prepareStatement("INSERT INTO " + primaryTableName + "(server, group_name, command, args_list_id) VALUES (?, ?, ?, ?)")) {
+                        insert.setString(1, server);
+                        insert.setString(2, group);
+                        insert.setString(3, command);
+                        insert.setBlob(4, idBlob);
+
+                        insert.execute();
+
+                        insertArguments(argsId, args);
+                    }
+                } else {
+                    try (PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + " WHERE (server = '" + server + "') AND (group_name = '" + group + "') AND (command = '" + command + "') AND (args_list_id = ?)")) {
+                        while (similar.next()) {
+                            List<String> rowArgs = getArguments(similar.getBlob("args_list_id"));
+                            // If it matches, remove it
+                            if (rowArgs.equals(args)) {
+                                delete.setBlob(1, similar.getBlob("args_list_id"));
+                                delete.execute();
+                                removeArguments(similar.getBlob("args_list_id"));
+                            }
                         }
                     }
                 }

@@ -16,30 +16,40 @@
  */
 package com.lupinenetwork.commandwhitelister;
 
-import com.lupinenetwork.commandwhitelister.Constants;
-import com.lupinenetwork.commandwhitelister.CommandListener;
 import com.lupinenetwork.commandwhitelister.database.MySQLWhitelistDatabase;
 import java.sql.Driver;
 import java.sql.SQLException;
 import java.util.logging.Level;
-import org.bukkit.plugin.java.JavaPlugin;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabase;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabaseException;
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Logger;
+import net.md_5.bungee.api.plugin.Plugin;
+import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.config.ConfigurationProvider;
+import net.md_5.bungee.config.YamlConfiguration;
 
 /**
  * The main plugin class.
  * 
  * @author Moses Miller <pre><Majora320@gmail.com></pre>
  */
-public class Main extends JavaPlugin {
+public class Main extends Plugin {
     private WhitelistDatabase database;
     
     @Override
     public void onEnable() {
-        saveDefaultConfig();
+        Configuration config;
+        try {
+            config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(new File(getDataFolder(), "config.yml"));
+        } catch (IOException ex) {
+            getProxy().getLogger().log(Level.WARNING, "Failed to load config file", ex);
+            config = new Configuration();
+        }
         
         /*---------- DRIVER HANDLING ----------*/
-        String driverName = getConfig().getString("mysql.driver", Constants.DEFAULT_DRIVER_NAME);
+        String driverName = config.getString("mysql.driver", Constants.DEFAULT_DRIVER_NAME);
         Driver driver;
         
         try {
@@ -47,10 +57,10 @@ public class Main extends JavaPlugin {
                 driver = (Driver)Class.forName(driverName).newInstance();
             } catch (ClassNotFoundException ex) {
                 // No need to report exception; we know what it is
-                getServer().getLogger().log(Level.WARNING, "Could not find driver {0}, using default driver {1} instead.", new String[]{ driverName, Constants.DEFAULT_DRIVER_NAME });
+                getProxy().getLogger().log(Level.WARNING, "Could not find driver {0}, using default driver {1} instead.", new String[]{ driverName, Constants.DEFAULT_DRIVER_NAME });
                 driver = Constants.getDefaultDriver();
             } catch (InstantiationException | IllegalAccessException ex) {
-                getServer().getLogger().log(Level.WARNING, "Error initializing driver " + driverName + ", using default driver " + Constants.DEFAULT_DRIVER_NAME + " instead.", ex);
+                getProxy().getLogger().log(Level.WARNING, "Error initializing driver " + driverName + ", using default driver " + Constants.DEFAULT_DRIVER_NAME + " instead.", ex);
                 driver = Constants.getDefaultDriver();
             }
         } catch (SQLException ex) { // We coulden't initialize the default driver
@@ -58,11 +68,11 @@ public class Main extends JavaPlugin {
         }
         /*---------- END DRIVER HANDLING ----------*/
         
-        String url = getConfig().getString("mysql.url", Constants.DEFAULT_URL);
-        String username = getConfig().getString("mysql.username");
-        String password = getConfig().getString("mysql.password");
-        String primaryTableName = getConfig().getString("mysql.primary-table-name", Constants.DEFAULT_PRIMARY_TABLE_NAME);
-        String argumentTableName = getConfig().getString("mysql.argument-table-name", Constants.DEFAULT_ARGUMENT_TABLE_NAME);
+        String url = config.getString("mysql.url", Constants.DEFAULT_URL);
+        String username = config.getString("mysql.username");
+        String password = config.getString("mysql.password");
+        String primaryTableName = config.getString("mysql.primary-table-name", Constants.DEFAULT_PRIMARY_TABLE_NAME);
+        String argumentTableName = config.getString("mysql.argument-table-name", Constants.DEFAULT_ARGUMENT_TABLE_NAME);
         
         try {
             database = new MySQLWhitelistDatabase(url, username, password, primaryTableName, argumentTableName, driver);
@@ -70,8 +80,8 @@ public class Main extends JavaPlugin {
             throw new RuntimeException("Failed to initialize the connection to the database, bailing out!", ex);
         }
         
-        getServer().getPluginManager().registerEvents(new CommandListener(database, getConfig()), this);
-        getCommand("commandwhitelister").setExecutor(new WhitelistCommand(database));
+        getProxy().getPluginManager().registerListener(this, new CommandListener(database, config));
+        getProxy().getPluginManager().registerCommand(this, new WhitelistCommand(database));
     }
     
     @Override
@@ -79,7 +89,7 @@ public class Main extends JavaPlugin {
         try {
             database.close();
         } catch (Exception ex) {
-            getServer().getLogger().log(Level.SEVERE, "Failed to close the connection to the database!", ex);
+            getProxy().getLogger().log(Level.SEVERE, "Failed to close the connection to the database!", ex);
         }
     }
 }

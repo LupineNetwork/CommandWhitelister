@@ -18,29 +18,32 @@ package com.lupinenetwork.commandwhitelister;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.bukkit.ChatColor;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabase;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabaseException;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.plugin.Command;
 
 /**
  * The logic for the /commandwhitelister command.
  * 
  * @author Moses Miller <pre><Majora320@gmail.com></pre>
  */
-public class WhitelistCommand implements CommandExecutor {
+public class WhitelistCommand extends Command {
     private final WhitelistDatabase database;
     
     public WhitelistCommand(WhitelistDatabase database) {
+        super("commandwhitelister");
         this.database = database;
     }
-    
+
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (args.length < 4)
-            return false;
+    public void execute(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            sender.sendMessage();
+            return;
+        }
         
         String world = args[0];
         String group = args[1];
@@ -63,17 +66,16 @@ public class WhitelistCommand implements CommandExecutor {
                 on = false;
                 break;
             default:
-                return false;
+                return;
         }
         
         try {
             database.set(on, world, group, command, subs);
         } catch (WhitelistDatabaseException ex) {
-            sender.sendMessage(ChatColor.RED + "Error modifing the database! Check the logs for details.");
+            sender.sendMessage(new TextComponent(ChatColor.RED + "Error modifing the database! Check the logs for details."));
             throw new RuntimeException(ex);
         }
         
-        sender.sendMessage(ChatColor.GREEN + "Successfully modified the database!");
-        return true;
-    } 
+        sender.sendMessage(new TextComponent(ChatColor.GREEN + "Successfully modified the database!"));
+    }
 }
