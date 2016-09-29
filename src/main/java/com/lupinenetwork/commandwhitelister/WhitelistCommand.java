@@ -41,7 +41,7 @@ public class WhitelistCommand extends Command {
     @Override
     public void execute(CommandSender sender, String[] args) {
         if (args.length < 4) {
-            sender.sendMessage();
+            sender.sendMessage(new TextComponent(Constants.COMMANDWHITELISTER_USAGE));
             return;
         }
         
@@ -66,6 +66,7 @@ public class WhitelistCommand extends Command {
                 on = false;
                 break;
             default:
+                sender.sendMessage(new TextComponent(Constants.COMMANDWHITELISTER_USAGE));
                 return;
         }
         

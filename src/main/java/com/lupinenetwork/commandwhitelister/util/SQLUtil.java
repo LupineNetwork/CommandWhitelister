@@ -16,8 +16,12 @@
  */
 package com.lupinenetwork.commandwhitelister.util;
 
+import com.lupinenetwork.commandwhitelister.Constants;
+import java.sql.Driver;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Misc. util for sql.
@@ -44,5 +48,26 @@ public class SQLUtil {
         }
         
         return rows;
+    }
+    
+    public static Driver getDriver(String driverName, Logger logger) {
+        Driver driver;
+        
+        try {
+            try {
+                driver = (Driver)Class.forName(driverName).newInstance();
+            } catch (ClassNotFoundException ex) {
+                // No need to report exception; we know what it is
+                logger.log(Level.WARNING, "Could not find driver {0}, using default driver {1} instead.", new String[]{ driverName, Constants.DEFAULT_DRIVER_NAME });
+                driver = Constants.getDefaultDriver();
+            } catch (InstantiationException | IllegalAccessException ex) {
+                logger.log(Level.WARNING, "Error initializing driver " + driverName + ", using default driver " + Constants.DEFAULT_DRIVER_NAME + " instead.", ex);
+                driver = Constants.getDefaultDriver();
+            }
+        } catch (SQLException ex) { // We coulden't initialize the default driver
+            throw new RuntimeException("Failed to initialize the default driver, bailing out!", ex);
+        }
+        
+        return driver;
     }
 }

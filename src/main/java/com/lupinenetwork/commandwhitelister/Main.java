@@ -18,13 +18,12 @@ package com.lupinenetwork.commandwhitelister;
 
 import com.lupinenetwork.commandwhitelister.database.MySQLWhitelistDatabase;
 import java.sql.Driver;
-import java.sql.SQLException;
 import java.util.logging.Level;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabase;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabaseException;
+import com.lupinenetwork.commandwhitelister.util.SQLUtil;
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Logger;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
@@ -48,25 +47,9 @@ public class Main extends Plugin {
             config = new Configuration();
         }
         
-        /*---------- DRIVER HANDLING ----------*/
         String driverName = config.getString("mysql.driver", Constants.DEFAULT_DRIVER_NAME);
-        Driver driver;
         
-        try {
-            try {
-                driver = (Driver)Class.forName(driverName).newInstance();
-            } catch (ClassNotFoundException ex) {
-                // No need to report exception; we know what it is
-                getProxy().getLogger().log(Level.WARNING, "Could not find driver {0}, using default driver {1} instead.", new String[]{ driverName, Constants.DEFAULT_DRIVER_NAME });
-                driver = Constants.getDefaultDriver();
-            } catch (InstantiationException | IllegalAccessException ex) {
-                getProxy().getLogger().log(Level.WARNING, "Error initializing driver " + driverName + ", using default driver " + Constants.DEFAULT_DRIVER_NAME + " instead.", ex);
-                driver = Constants.getDefaultDriver();
-            }
-        } catch (SQLException ex) { // We coulden't initialize the default driver
-            throw new RuntimeException("Failed to initialize the default driver, bailing out!", ex);
-        }
-        /*---------- END DRIVER HANDLING ----------*/
+        Driver driver = SQLUtil.getDriver(driverName, getProxy().getLogger());
         
         String url = config.getString("mysql.url", Constants.DEFAULT_URL);
         String username = config.getString("mysql.username");
