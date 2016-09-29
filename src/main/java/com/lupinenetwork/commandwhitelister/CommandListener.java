@@ -31,7 +31,6 @@ import net.md_5.bungee.api.event.ChatEvent;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
-import ru.tehkode.permissions.bukkit.PermissionsEx;
 
 /**
  * The class which handles the command request.
@@ -87,7 +86,7 @@ public class CommandListener implements Listener {
         
         boolean allow = label.equals("commandwhitelister")
                 || allows.stream()
-                .filter(group -> group.equals("*") || PermissionsEx.getUser(player.getName()).inGroup(group))
+                .filter(group -> group.equals("*") || player.hasPermission("group." + group))
                         .toArray().length != 0;
 
         if (!allow) {
