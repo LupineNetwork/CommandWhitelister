@@ -22,8 +22,14 @@ import java.util.logging.Level;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabase;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabaseException;
 import com.lupinenetwork.commandwhitelister.util.SQLUtil;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
@@ -39,12 +45,20 @@ public class Main extends Plugin {
     
     @Override
     public void onEnable() {
+        Path configFile = Paths.get(getDataFolder().getAbsolutePath(), "config.yml");
+        InputStream defaultConfig = getResourceAsStream("/config.yml");
         Configuration config;
+        
         try {
-            config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(new File(getDataFolder(), "config.yml"));
+            if (!Files.exists(configFile)) {
+                getDataFolder().mkdirs();
+                Files.copy(defaultConfig, configFile);
+            }
+            
+            config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(configFile.toFile());
         } catch (IOException ex) {
             getProxy().getLogger().log(Level.WARNING, "Failed to load config file", ex);
-            config = new Configuration();
+            config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(defaultConfig);
         }
         
         String driverName = config.getString("mysql.driver", Constants.DEFAULT_DRIVER_NAME);
