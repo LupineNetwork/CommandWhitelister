@@ -3,7 +3,7 @@ version: 0.1.0
 description: Manages who is allowed to use commands.
 author: Majora320
 website: http://lupinenetwork.com
-main: org.majora320.commandwhitelister.Main
+main: com.lupinenetwork.commandwhitelister.Main
 
 commands:
     commandwhitelister:
