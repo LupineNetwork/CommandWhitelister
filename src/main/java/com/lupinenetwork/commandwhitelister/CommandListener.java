@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import net.md_5.bungee.api.plugin.Listener;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabase;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabaseException;
+import java.util.Arrays;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.Connection;
@@ -46,10 +47,6 @@ public class CommandListener implements Listener {
         this.config = config;
     }
 
-    // Complicated magic :)
-    // We need raw strings in java!
-    private static final Pattern COMMAND_PATTERN = Pattern.compile("([^ ]+)\\S+");
-
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onChat(ChatEvent evt) {
         Connection sender = evt.getSender();
@@ -62,20 +59,19 @@ public class CommandListener implements Listener {
         if (player.hasPermission("commandwhitelister.bypass"))
             return;
         
+        if (evt.getMessage().trim().charAt(0) != '/')
+            return;
+        
+        System.err.println(evt.getMessage().trim());
+        System.err.println(evt.getMessage().trim().substring(1));
+        
         String cmd = evt.getMessage().trim().substring(1); // Remove leading slash
-        Matcher matt = COMMAND_PATTERN.matcher(cmd);
-
-        String label;
-        List<String> args = new ArrayList<>();
-
-        if (!matt.find()) {
-            return; // Pattern did not match; will cause a syntax error
-        }
-        label = matt.group(1); // Group 1 is the contents without the \S*
-
-        while (matt.find()) {
-            args.add(matt.group(1));
-        }
+        String[] split = cmd.split("\\s+");
+        
+        System.err.println(Arrays.toString(split));
+        
+        String label = split[0];
+        List<String> args = Arrays.asList(split).subList(1, split.length);
         
         List<String> allows;
         try {

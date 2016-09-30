@@ -46,7 +46,7 @@ public class Main extends Plugin {
     @Override
     public void onEnable() {
         Path configFile = Paths.get(getDataFolder().getAbsolutePath(), "config.yml");
-        InputStream defaultConfig = getResourceAsStream("/config.yml");
+        InputStream defaultConfig = getResourceAsStream("config.yml");
         Configuration config;
         
         try {
@@ -55,9 +55,9 @@ public class Main extends Plugin {
                 Files.copy(defaultConfig, configFile);
             }
             
-            config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(configFile.toFile());
+            config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(new File(getDataFolder(), "config.yml"));
         } catch (IOException ex) {
-            getProxy().getLogger().log(Level.WARNING, "Failed to load config file", ex);
+            getLogger().log(Level.WARNING, "Failed to load config file", ex);
             config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(defaultConfig);
         }
         

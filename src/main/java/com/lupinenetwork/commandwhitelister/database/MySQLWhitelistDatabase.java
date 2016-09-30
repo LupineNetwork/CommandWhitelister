@@ -141,7 +141,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                         + "((server = '*') OR (server = ?))" // Handle wildcards
                         + "AND (command = ?)")) {
             stmt.setString(1, server);
-            stmt.setString(1, command);
+            stmt.setString(2, command);
             try (ResultSet rs = stmt.executeQuery()) {
                 // Check if each row's arguments match the args parameter
                 // If they do, add it to ret
