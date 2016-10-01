@@ -28,7 +28,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.regex.Pattern;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
@@ -69,9 +68,9 @@ public class Main extends Plugin {
         String password = config.getString("mysql.password");
         String primaryTableName = config.getString("mysql.table-name", Constants.DEFAULT_PRIMARY_TABLE_NAME);
         
-        // Check table names
-        Pattern alpha = Pattern.compile("[A-Za-z_]");
-        
+        // Check table name
+        if (!primaryTableName.matches("^[A-Za-z_]*$"))
+            primaryTableName = Constants.DEFAULT_PRIMARY_TABLE_NAME;
         
         try {
             database = new MySQLWhitelistDatabase(url, username, password, primaryTableName, driver);

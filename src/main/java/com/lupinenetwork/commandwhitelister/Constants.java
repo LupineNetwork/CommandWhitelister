@@ -28,7 +28,6 @@ public final class Constants {
     public static final String DEFAULT_URL = "jdbc:mysql:localhost/test";
     public static final String DEFAULT_DRIVER_NAME = "com.mysql.jdbc.Driver";
     public static final String DEFAULT_PRIMARY_TABLE_NAME = "command_whitelister";
-    public static final String DEFAULT_ARGUMENT_TABLE_NAME = "command_whitelister_arguments";
     public static final String COMMANDWHITELISTER_USAGE = "§cUsage: /commandwhitelister world group command [subcommand...] (on|off)";
     
     // Workaround to make up for the fact that constants can't throw
