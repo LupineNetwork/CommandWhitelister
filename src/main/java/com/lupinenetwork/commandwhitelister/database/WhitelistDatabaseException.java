@@ -22,6 +22,8 @@ package com.lupinenetwork.commandwhitelister.database;
  * @author Moses Miller <pre><Majora320@gmail.com></pre>
  */
 public class WhitelistDatabaseException extends Exception {
+    private static final long serialVersionUID = -6105720919867383960L;
+    
     public WhitelistDatabaseException(String message) {
         super(message);
     }

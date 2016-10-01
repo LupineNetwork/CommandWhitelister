@@ -85,6 +85,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
      * @return the encoded object
      * @throws SQLException if there is an error with the database
      */
+    @SuppressWarnings("unchecked")
     protected String JSONEncode(List<String> args) throws SQLException {
         JSONArray array = new JSONArray();
         array.addAll(args);
@@ -98,7 +99,9 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
      * @param rs the {@code ResultSet} to read from
      * @return the retrieved records
      * @throws SQLException if there is an error with the database
+     * @throws ParseException if there was an error parsing the JSON
      */
+    @SuppressWarnings("unchecked")
     protected List<String> getArguments(ResultSet rs) throws SQLException, ParseException {
         String json = rs.getString("args");
         
