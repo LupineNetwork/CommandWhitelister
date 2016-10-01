@@ -149,9 +149,16 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                     List<String> rowArgs = getArguments(rs.getBlob("args_list_id"));
 
                     // If args starts with rowArgs
-                    if (args.size() >= rowArgs.size() && rowArgs.equals(args.subList(0, rowArgs.size()))) {
-                        // Add it
-                        ret.add(rs.getString("group_name"));
+                    if (args.size() >= rowArgs.size()) {
+                        boolean allow = true;
+                        
+                        for (int i = 0; i < rowArgs.size(); i++)
+                            if (!(rowArgs.get(i).equals("*") || rowArgs.get(i).equals(args.get(i))))
+                                allow = false;
+                        
+                        if (allow)
+                            // Add it
+                            ret.add(rs.getString("group_name"));
                     }
                 }
             }
