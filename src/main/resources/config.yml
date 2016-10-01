@@ -5,12 +5,10 @@ mysql:
     username: user
     password: secure
     
-    # Where the actual information is stored
-    primary-table-name: command_whitelister
-    # Where lists of command arguments are stored
-    argument-table-name: command_whitelister_arguments
+    # Where everything is stored
+    table-name: command_whitelister
 
 messages:
     # {0} is replaced by the command name (without the leading slash)
-    blacklisted-error-message: "&cYou do not have permission to execute this command!"
+    not-whitelisted: "&cYou do not have permission to execute this command!"
     

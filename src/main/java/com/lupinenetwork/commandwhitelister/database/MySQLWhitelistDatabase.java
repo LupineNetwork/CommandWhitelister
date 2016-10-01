@@ -16,9 +16,6 @@
  */
 package com.lupinenetwork.commandwhitelister.database;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -28,8 +25,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import com.lupinenetwork.commandwhitelister.Constants;
+import org.json.simple.JSONArray;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 /**
  * A mysql implementation of the database.
@@ -37,18 +36,15 @@ import com.lupinenetwork.commandwhitelister.Constants;
  * @author Moses Miller <pre><Majora320@gmail.com></pre>
  */
 public class MySQLWhitelistDatabase implements WhitelistDatabase {
-
     private Connection conn;
     private String primaryTableName;
-    private String argumentTableName;
 
     public MySQLWhitelistDatabase(Connection conn) {
         this.conn = conn;
     }
 
-    public MySQLWhitelistDatabase(String url, String username, String password, String primaryTableName, String argumentTableName, Driver driver) throws WhitelistDatabaseException {
+    public MySQLWhitelistDatabase(String url, String username, String password, String primaryTableName, Driver driver) throws WhitelistDatabaseException {
         this.primaryTableName = primaryTableName;
-        this.argumentTableName = argumentTableName;
 
         try {
             DriverManager.registerDriver(driver);
@@ -59,9 +55,8 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
         }
     }
 
-    public MySQLWhitelistDatabase(String url, String username, String primaryTableName, String argumentTableName, String password) throws WhitelistDatabaseException {
+    public MySQLWhitelistDatabase(String url, String username, String primaryTableName, String password) throws WhitelistDatabaseException {
         this.primaryTableName = primaryTableName;
-        this.argumentTableName = argumentTableName;
 
         try {
             DriverManager.registerDriver(Constants.getDefaultDriver()); // Default driver
@@ -79,65 +74,45 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
      */
     protected final void initializeDatabase() throws SQLException {
         try (Statement stmt = conn.createStatement()) {
-            stmt.execute("CREATE TABLE IF NOT EXISTS " + primaryTableName + "(id BIGINT NOT NULL AUTO_INCREMENT, server VARCHAR(255), group_name VARCHAR(255), command VARCHAR(255), args_list_id BLOB(20), PRIMARY KEY(id))");
-            stmt.execute("CREATE TABLE IF NOT EXISTS " + argumentTableName + "(value VARCHAR(255), args_list_id BLOB(20))");
+            stmt.execute("CREATE TABLE IF NOT EXISTS " + primaryTableName + "(id BIGINT NOT NULL AUTO_INCREMENT, server VARCHAR(255), group_name VARCHAR(255), command VARCHAR(255), args VARCHAR(255), PRIMARY KEY(id))");
         }
     }
 
     /**
      * Inserts a list of arguments into the database.
      *
-     * @param id the id of the arguments to insert
-     * @param args the arguments to insert
+     * @param args the arguments to serialize
+     * @return the encoded object
      * @throws SQLException if there is an error with the database
      */
-    protected void insertArguments(byte[] id, List<String> args) throws SQLException {
-        Blob idBlob = conn.createBlob();
-        idBlob.setBytes(1, id);
-
-        try (PreparedStatement stmt = conn.prepareStatement("INSERT INTO " + argumentTableName + " VALUES(?, ?)")) {
-            for (String arg : args) {
-                stmt.setString(1, arg);
-                stmt.setBlob(2, idBlob);
-                stmt.execute();
-            }
-        }
+    protected String JSONEncode(List<String> args) throws SQLException {
+        JSONArray array = new JSONArray();
+        array.addAll(args);
+        return array.toJSONString();
     }
 
     /**
      * Retrieves a list of arguments from the database.
+     * Requires the column "args" to be requested.
      *
-     * @param id the id of the arguments to inset
+     * @param rs the {@code ResultSet} to read from
      * @return the retrieved records
      * @throws SQLException if there is an error with the database
      */
-    protected List<String> getArguments(Blob id) throws SQLException {
-        List<String> ret = new ArrayList<>();
-
-        try (PreparedStatement stmt = conn.prepareStatement("SELECT * FROM " + argumentTableName + " WHERE (args_list_id = ?)")) {
-            stmt.setBlob(1, id);
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    ret.add(rs.getString("value"));
-                }
-            }
-        }
-
-        return ret;
-    }
-    
-    protected void removeArguments(Blob id) throws SQLException {
-        try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM " + argumentTableName + " WHERE (args_list_id = ?)")) {
-            stmt.setBlob(1, id);
-            stmt.execute();
-        }
+    protected List<String> getArguments(ResultSet rs) throws SQLException, ParseException {
+        String json = rs.getString("args");
+        
+        JSONParser parser = new JSONParser();
+        JSONArray parsed = (JSONArray)parser.parse(json);
+        
+        return parsed;
     }
 
     @Override
     public List<String> get(String server, String command, List<String> args) throws WhitelistDatabaseException {
         List<String> ret = new ArrayList<>();
 
-        try (PreparedStatement stmt = conn.prepareStatement("SELECT * FROM " + primaryTableName + " WHERE "
+        try (PreparedStatement stmt = conn.prepareStatement("SELECT group_name AND args FROM " + primaryTableName + " WHERE "
                         + "((server = '*') OR (server = ?))" // Handle wildcards
                         + "AND (command = ?)")) {
             stmt.setString(1, server);
@@ -146,7 +121,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                 // Check if each row's arguments match the args parameter
                 // If they do, add it to ret
                 while (rs.next()) {
-                    List<String> rowArgs = getArguments(rs.getBlob("args_list_id"));
+                    List<String> rowArgs = getArguments(rs);
 
                     // If args starts with rowArgs
                     if (args.size() >= rowArgs.size()) {
@@ -162,7 +137,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                     }
                 }
             }
-        } catch (SQLException ex) {
+        } catch (SQLException | ParseException ex) {
             throw new WhitelistDatabaseException(ex);
         }
 
@@ -171,76 +146,39 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
 
     @Override
     public void set(boolean on, String server, String group, String command, List<String> args) throws WhitelistDatabaseException {
-        try (PreparedStatement stmt = conn.prepareStatement("SELECT * FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?)")) {
+        try (PreparedStatement stmt = conn.prepareStatement("SELECT args FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?)")) {
             stmt.setString(1, server);
             stmt.setString(2, group);
             stmt.setString(3, command);
             try (ResultSet similar = stmt.executeQuery()) {
                 if (on) {
                     while (similar.next()) {
-                        if (getArguments(similar.getBlob("args_list_id")).equals(args))
+                        if (getArguments(similar).equals(args))
                             return;
                     }
 
                     similar.beforeFirst();
 
-                    byte[] argsId;
-                    Blob idBlob = conn.createBlob();
-
-                    try {
-                        List<Blob> allArgsIds = new ArrayList<>();
-
-                        // Collect every args_list_id field to make sure it dosen't conflict with ours
-                        ResultSet argsIdsRow = stmt.executeQuery("SELECT args_list_id FROM " + primaryTableName);
-
-                        while (argsIdsRow.next()) {
-                            Blob id = argsIdsRow.getBlob("args_list_id");
-                            allArgsIds.add(id);
-                        }
-
-                        do {
-                            // Accumulate into a single string, plus some randomness
-                            // Then hash that
-                            // 3random5you?
-                            Random rand = new Random();
-                            argsId = MessageDigest.getInstance("SHA-1").digest(args.stream().reduce(new String(), (result, element) -> {
-                                byte[] randomBytes = new byte[4];
-                                rand.nextBytes(randomBytes);
-                                return result + new String(randomBytes) + element;
-                            }).getBytes());
-
-                            idBlob.setBytes(1, argsId);
-                        } while (allArgsIds.contains(idBlob));
-                    } catch (NoSuchAlgorithmException ex) {
-                        throw new RuntimeException("MessageDigest does not contain the required implementation for SHA-1 algorithm", ex);
-                    }
-
                     // Insert everything
-                    try (PreparedStatement insert = conn.prepareStatement("INSERT INTO " + primaryTableName + "(server, group_name, command, args_list_id) VALUES (?, ?, ?, ?)")) {
+                    try (PreparedStatement insert = conn.prepareStatement("INSERT INTO " + primaryTableName + "(server, group_name, command, args) VALUES (?, ?, ?, ?)")) {
                         insert.setString(1, server);
                         insert.setString(2, group);
                         insert.setString(3, command);
-                        insert.setBlob(4, idBlob);
+                        insert.setString(4, JSONEncode(args));
 
                         insert.execute();
-
-                        insertArguments(argsId, args);
                     }
                 } else {
-                    try (PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + " WHERE (server = '" + server + "') AND (group_name = '" + group + "') AND (command = '" + command + "') AND (args_list_id = ?)")) {
-                        while (similar.next()) {
-                            List<String> rowArgs = getArguments(similar.getBlob("args_list_id"));
-                            // If it matches, remove it
-                            if (rowArgs.equals(args)) {
-                                delete.setBlob(1, similar.getBlob("args_list_id"));
-                                delete.execute();
-                                removeArguments(similar.getBlob("args_list_id"));
-                            }
-                        }
+                    try (PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?) AND (args = ?)")) {
+                        delete.setString(1, server);
+                        delete.setString(2, group);
+                        delete.setString(3, command);
+                        delete.setString(4, JSONEncode(args));
+                        delete.execute();
                     }
                 }
             }
-        } catch (SQLException ex) {
+        } catch (SQLException | ParseException ex) {
             throw new WhitelistDatabaseException(ex);
         }
     }

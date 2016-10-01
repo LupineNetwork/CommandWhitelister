@@ -22,14 +22,13 @@ import java.util.logging.Level;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabase;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabaseException;
 import com.lupinenetwork.commandwhitelister.util.SQLUtil;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.regex.Pattern;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
@@ -68,11 +67,14 @@ public class Main extends Plugin {
         String url = config.getString("mysql.url", Constants.DEFAULT_URL);
         String username = config.getString("mysql.username");
         String password = config.getString("mysql.password");
-        String primaryTableName = config.getString("mysql.primary-table-name", Constants.DEFAULT_PRIMARY_TABLE_NAME);
-        String argumentTableName = config.getString("mysql.argument-table-name", Constants.DEFAULT_ARGUMENT_TABLE_NAME);
+        String primaryTableName = config.getString("mysql.table-name", Constants.DEFAULT_PRIMARY_TABLE_NAME);
+        
+        // Check table names
+        Pattern alpha = Pattern.compile("[A-Za-z_]");
+        
         
         try {
-            database = new MySQLWhitelistDatabase(url, username, password, primaryTableName, argumentTableName, driver);
+            database = new MySQLWhitelistDatabase(url, username, password, primaryTableName, driver);
         } catch (WhitelistDatabaseException ex) {
             throw new RuntimeException("Failed to initialize the connection to the database, bailing out!", ex);
         }

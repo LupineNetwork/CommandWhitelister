@@ -88,7 +88,7 @@ public class CommandListener implements Listener {
         if (!allow) {
             evt.setCancelled(true);
             player.sendMessage(new TextComponent(ChatColor.translateAlternateColorCodes('&', 
-                    config.getString("messages.blacklisted-error-message", "&cYou do not have permission to execute this command!"))));
+                    config.getString("messages.not-whitelisted", "&cYou do not have permission to execute this command!"))));
         }
     }
 }
