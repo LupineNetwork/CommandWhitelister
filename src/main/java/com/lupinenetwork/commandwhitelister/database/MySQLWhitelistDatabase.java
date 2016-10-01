@@ -26,9 +26,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import com.lupinenetwork.commandwhitelister.Constants;
-import org.json.simple.JSONArray;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import org.json.JSONArray;
 
 /**
  * A mysql implementation of the database.
@@ -88,8 +86,9 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
     @SuppressWarnings("unchecked")
     protected String JSONEncode(List<String> args) throws SQLException {
         JSONArray array = new JSONArray();
-        array.addAll(args);
-        return array.toJSONString();
+        array.put(args);
+        
+        return array.toString();
     }
 
     /**
@@ -99,16 +98,17 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
      * @param rs the {@code ResultSet} to read from
      * @return the retrieved records
      * @throws SQLException if there is an error with the database
-     * @throws ParseException if there was an error parsing the JSON
      */
     @SuppressWarnings("unchecked")
-    protected List<String> getArguments(ResultSet rs) throws SQLException, ParseException {
+    protected List<String> getArguments(ResultSet rs) throws SQLException {
         String json = rs.getString("args");
         
-        JSONParser parser = new JSONParser();
-        JSONArray parsed = (JSONArray)parser.parse(json);
+        JSONArray parsed = new JSONArray(json);
+        List<String> ret = new ArrayList<>();
         
-        return parsed;
+        parsed.iterator().forEachRemaining(o -> ret.add((String)o));
+        
+        return ret;
     }
 
     @Override
@@ -140,7 +140,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                     }
                 }
             }
-        } catch (SQLException | ParseException ex) {
+        } catch (SQLException ex) {
             throw new WhitelistDatabaseException(ex);
         }
 
@@ -181,7 +181,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                     }
                 }
             }
-        } catch (SQLException | ParseException ex) {
+        } catch (SQLException ex) {
             throw new WhitelistDatabaseException(ex);
         }
     }
