@@ -34,7 +34,7 @@ public class WhitelistCommand extends Command {
     private final WhitelistDatabase database;
     
     public WhitelistCommand(WhitelistDatabase database) {
-        super("commandwhitelister");
+        super("commandwhitelister", "commandwhitelister.use");
         this.database = database;
     }
 
