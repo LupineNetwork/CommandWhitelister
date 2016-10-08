@@ -26,6 +26,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import com.lupinenetwork.commandwhitelister.Constants;
+import java.util.regex.Pattern;
 import org.json.JSONArray;
 
 /**
@@ -86,7 +87,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
     @SuppressWarnings("unchecked")
     protected String JSONEncode(List<String> args) throws SQLException {
         JSONArray array = new JSONArray();
-        array.put(args);
+        args.forEach(s -> array.put(s));
         
         return array.toString();
     }
@@ -116,8 +117,8 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
         List<String> ret = new ArrayList<>();
 
         try (PreparedStatement stmt = conn.prepareStatement("SELECT group_name AND args FROM " + primaryTableName + " WHERE "
-                        + "((server = '*') OR (server = ?))" // Handle wildcards
-                        + "AND (command = ?)")) {
+                        + "(server = ?)" // Handle wildcards
+                        + "AND (command REGEXP ?)")) {
             stmt.setString(1, server);
             stmt.setString(2, command);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -130,9 +131,15 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                     if (args.size() >= rowArgs.size()) {
                         boolean allow = true;
                         
-                        for (int i = 0; i < rowArgs.size(); i++)
-                            if (!(rowArgs.get(i).equals("*") || rowArgs.get(i).equals(args.get(i))))
+                        Pattern[] argsPatterns = new Pattern[args.size()];
+                        
+                        for (int i = 0; i < argsPatterns.length; i++)
+                            argsPatterns[i] = Pattern.compile(args.get(i));
+                        
+                        for (int i = 0; i < rowArgs.size(); i++) {
+                            if (!rowArgs.get(i).matches("^" + args.get(i) + "$"))
                                 allow = false;
+                        }
                         
                         if (allow)
                             // Add it
@@ -149,7 +156,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
 
     @Override
     public void set(boolean on, String server, String group, String command, List<String> args) throws WhitelistDatabaseException {
-        try (PreparedStatement stmt = conn.prepareStatement("SELECT args FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?)")) {
+        try (PreparedStatement stmt = conn.prepareStatement("SELECT args FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command REGEXP ?)")) {
             stmt.setString(1, server);
             stmt.setString(2, group);
             stmt.setString(3, command);
@@ -172,7 +179,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                         insert.execute();
                     }
                 } else {
-                    try (PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?) AND (args = ?)")) {
+                    try (PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command REGEXP ?) AND (args = ?)")) {
                         delete.setString(1, server);
                         delete.setString(2, group);
                         delete.setString(3, command);

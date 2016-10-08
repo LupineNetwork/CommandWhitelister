@@ -72,6 +72,7 @@ public class CommandListener implements Listener {
         
         List<String> allows;
         try {
+            player.sendMessage(new TextComponent("Server name is " + player.getServer().getInfo().getName()));
             allows = database.get(player.getServer().getInfo().getName(), label, args);
         } catch (WhitelistDatabaseException ex) {
             throw new RuntimeException(ex);

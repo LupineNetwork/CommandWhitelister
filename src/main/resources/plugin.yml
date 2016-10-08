@@ -9,7 +9,7 @@ commands:
     commandwhitelister:
         description: Manages who is allowed to use commands.
         permission: commandwhitelister.use
-        usage: "§cUsage: /commandwhitelister world group command [subcommand...] (on|off)"
+        usage: "§cUsage: /commandwhitelister server group command [subcommand...] (on|off)"
 
 permissions:
     commandwhitelister.use:
