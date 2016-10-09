@@ -33,7 +33,7 @@ import net.md_5.bungee.event.EventPriority;
 /**
  * The class which handles the command request.
  *
- * @author Moses Miller <pre><Majora320@gmail.com></pre>
+ * @author Moses Miller &lt;Majora320@gmail.com&gt;
  */
 public class CommandListener implements Listener {
     private final WhitelistDatabase database;

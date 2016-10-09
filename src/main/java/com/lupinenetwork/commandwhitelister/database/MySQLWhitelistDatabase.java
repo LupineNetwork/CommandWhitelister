@@ -32,7 +32,7 @@ import org.json.JSONArray;
 /**
  * A mysql implementation of the database.
  *
- * @author Moses Miller <pre><Majora320@gmail.com></pre>
+ * @author Moses Miller &lt;Majora320@gmail.com&gt;
  */
 public class MySQLWhitelistDatabase implements WhitelistDatabase {
     private Connection conn;

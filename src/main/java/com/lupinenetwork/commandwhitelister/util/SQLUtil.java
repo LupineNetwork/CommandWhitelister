@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 /**
  * Misc. util for sql.
  * 
- * @author Moses Miller <pre><Majora320@gmail.com></pre>
+ * @author Moses Miller &lt;Majora320@gmail.com&gt;
  */
 public class SQLUtil {
     /**

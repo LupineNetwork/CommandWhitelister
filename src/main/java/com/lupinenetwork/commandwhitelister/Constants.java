@@ -22,7 +22,7 @@ import java.sql.SQLException;
 /**
  * Program-wide constants.
  * 
- * @author Moses Miller <pre><Majora320@gmail.com></pre>
+ * @author Moses Miller &lt;Majora320@gmail.com&gt;
  */
 public final class Constants {
     public static final String DEFAULT_URL = "jdbc:mysql:localhost/test";

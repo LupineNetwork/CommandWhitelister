@@ -36,7 +36,7 @@ import net.md_5.bungee.config.YamlConfiguration;
 /**
  * The main plugin class.
  * 
- * @author Moses Miller <pre><Majora320@gmail.com></pre>
+ * @author Moses Miller &lt;Majora320@gmail.com&gt;
  */
 public class Main extends Plugin {
     private WhitelistDatabase database;

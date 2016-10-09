@@ -22,7 +22,7 @@ import java.util.List;
  * A contract for a database class.
  * The idea is that you develop subclasses for mysql, sqlite, yaml, etc.
  * 
- * @author Moses Miller <pre><Majora320@gmail.com></pre>
+ * @author Moses Miller &lt;Majora320@gmail.com&gt;
  */
 public interface WhitelistDatabase extends AutoCloseable {
     /**

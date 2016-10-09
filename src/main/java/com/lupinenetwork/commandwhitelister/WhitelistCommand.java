@@ -28,7 +28,7 @@ import net.md_5.bungee.api.plugin.Command;
 /**
  * The logic for the /commandwhitelister command.
  * 
- * @author Moses Miller <pre><Majora320@gmail.com></pre>
+ * @author Moses Miller &lt;Majora320@gmail.com&gt;
  */
 public class WhitelistCommand extends Command {
     private final WhitelistDatabase database;
@@ -47,11 +47,22 @@ public class WhitelistCommand extends Command {
         
         String world = args[0];
         String group = args[1];
-        String command = args[2];
+        
+        int groupWithSpacesOffset = 0;
+        
+        
+        if (args[groupWithSpacesOffset + 1].charAt(0) == '"') {
+            int index = 1 + groupWithSpacesOffset;
+            
+            while (args[groupWithSpacesOffset + 1].charAt(args[groupWithSpacesOffset + 1].length() - 1) != '"')
+                group += args[++groupWithSpacesOffset];
+        }
+        
+        String command = args[2 + groupWithSpacesOffset];
         List<String> subs = new ArrayList<>();
         
         // Grab arguments
-        for (int i = 3; i < args.length - 1; i++) {
+        for (int i = 3 + groupWithSpacesOffset; i < args.length - 1; i++) {
             subs.add(args[i]);
         }
         
