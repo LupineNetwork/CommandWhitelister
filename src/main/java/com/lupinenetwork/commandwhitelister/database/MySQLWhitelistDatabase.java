@@ -156,7 +156,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
 
     @Override
     public void set(boolean on, String server, String group, String command, List<String> args) throws WhitelistDatabaseException {
-        try (PreparedStatement stmt = conn.prepareStatement("SELECT args FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command REGEXP ?)")) {
+        try (PreparedStatement stmt = conn.prepareStatement("SELECT args FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?)")) {
             stmt.setString(1, server);
             stmt.setString(2, group);
             stmt.setString(3, command);
@@ -179,7 +179,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                         insert.execute();
                     }
                 } else {
-                    try (PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command REGEXP ?) AND (args = ?)")) {
+                    try (PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?) AND (args = ?)")) {
                         delete.setString(1, server);
                         delete.setString(2, group);
                         delete.setString(3, command);
