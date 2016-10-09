@@ -118,7 +118,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
 
         try (PreparedStatement stmt = conn.prepareStatement("SELECT group_name AND args FROM " + primaryTableName + " WHERE "
                         + "(server = ?)" // Handle wildcards
-                        + "AND (command REGEXP ?)")) {
+                        + "AND (? REGEXP command)")) {
             stmt.setString(1, server);
             stmt.setString(2, command);
             try (ResultSet rs = stmt.executeQuery()) {
