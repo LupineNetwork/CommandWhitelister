@@ -51,10 +51,10 @@ public class WhitelistCommand extends Command {
         int groupWithSpacesOffset = 0;
         
         
-        if (args[groupWithSpacesOffset + 1].charAt(0) == '"') {
+        if (args[groupWithSpacesOffset + 2].charAt(0) == '"') {
             int index = 1 + groupWithSpacesOffset;
             
-            while (args[groupWithSpacesOffset + 1].charAt(args[groupWithSpacesOffset + 1].length() - 1) != '"')
+            while (args[groupWithSpacesOffset + 2].charAt(args[groupWithSpacesOffset + 2].length() - 1) != '"')
                 group += args[++groupWithSpacesOffset];
         }
         
