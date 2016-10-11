@@ -77,7 +77,7 @@ public class CommandListener implements Listener {
         
         String[] matchingKeys = (String[]) allows.keySet().stream()
                 .filter(group -> group.equals("*") || player.hasPermission("group." + group))
-                .toArray();
+                .toArray(String[]::new);
         
         for (String s : matchingKeys) {
             if (allows.get(s).equals(false))

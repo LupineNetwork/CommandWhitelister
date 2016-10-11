@@ -118,7 +118,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
         Map<String, Boolean> ret = new HashMap<>();
 
         try (PreparedStatement stmt = conn.prepareStatement("SELECT group_name, args, is_on FROM " + primaryTableName + " WHERE "
-                        + "(server = ?)"
+                        + "((server = ?) OR (server = '*'))"
                         + "AND (? REGEXP command)")) {
             stmt.setString(1, server);
             stmt.setString(2, command);
@@ -126,8 +126,10 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                 // Check if each row's arguments match the args parameter
                 // If they do, add it to ret
                 while (rs.next()) {
-                    if (!rs.getBoolean("is_on"))
+                    if (!rs.getBoolean("is_on")) {
                         ret.put(rs.getString("group_name"), false);
+                        continue;
+                    }
                     
                     List<String> rowArgs = getArguments(rs);
 
@@ -157,7 +159,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
 
     @Override
     public void set(boolean on, String server, String group, String command, List<String> args) throws WhitelistDatabaseException {
-        try (PreparedStatement stmt = conn.prepareStatement("SELECT args FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?)")) {
+        try (PreparedStatement stmt = conn.prepareStatement("SELECT args, is_on FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?)")) {
             stmt.setString(1, server);
             stmt.setString(2, group);
             stmt.setString(3, command);
@@ -165,18 +167,28 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
             try (ResultSet similar = stmt.executeQuery()) {
                 if (on) {
                     while (similar.next())
-                        if (getArguments(similar).equals(args))
+                        if (getArguments(similar).equals(args) && similar.getBoolean("is_on"))
                             return;
 
                     similar.beforeFirst();
-
+                    
+                    try (PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?) AND (args = ?) AND (is_on = ?)")) {
+                        delete.setString(1, server);
+                        delete.setString(2, group);
+                        delete.setString(3, command);
+                        delete.setString(4, JSONEncode(args));
+                        delete.setBoolean(5, false);
+                        
+                        delete.execute();
+                    }
+                    
                     // Insert everything
                     try (PreparedStatement insert = conn.prepareStatement("INSERT INTO " + primaryTableName + "(server, group_name, command, args, is_on) VALUES (?, ?, ?, ?, ?)")) {
                         insert.setString(1, server);
                         insert.setString(2, group);
                         insert.setString(3, command);
                         insert.setString(4, JSONEncode(args));
-                        insert.setBoolean(5, on);
+                        insert.setBoolean(5, true);
 
                         insert.execute();
                     }
@@ -187,15 +199,17 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                         delete.setString(3, command);
                         delete.setString(4, JSONEncode(args));
                         delete.setBoolean(5, true);
+                        
                         delete.execute();
                     }
                     
-                    try (PreparedStatement insert = conn.prepareStatement("INSERT INTO " + primaryTableName + "VALUES (?, ?, ?, ?, ?)")) {
+                    try (PreparedStatement insert = conn.prepareStatement("INSERT INTO " + primaryTableName + "(server, group_name, command, args, is_on) VALUES (?, ?, ?, ?, ?)")) {
                        insert.setString(1, server);
                        insert.setString(2, group);
                        insert.setString(3, command);
                        insert.setString(4, JSONEncode(args));
                        insert.setBoolean(5, false);
+                       
                        insert.execute();
                     }
                 }
