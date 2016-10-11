@@ -73,7 +73,7 @@ public class CommandListener implements Listener {
             throw new RuntimeException(ex);
         }
         
-        boolean allow = true;
+        boolean allow = false;
         
         String[] matchingKeys = (String[]) allows.keySet().stream()
                 .filter(group -> group.equals("*") || player.hasPermission("group." + group))
@@ -84,7 +84,7 @@ public class CommandListener implements Listener {
                 allow = false;
         }
         
-        if (label.equals("commandwhitelister"))
+        if (label.equals("commandwhitelister") || matchingKeys.length != 0)
             allow = true;
 
         if (!allow) {
