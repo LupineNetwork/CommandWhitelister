@@ -74,7 +74,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
      */
     protected final void initializeDatabase() throws SQLException {
         try (Statement stmt = conn.createStatement()) {
-            stmt.execute("CREATE TABLE IF NOT EXISTS " + primaryTableName + "(id BIGINT NOT NULL AUTO_INCREMENT, server VARCHAR(255), group_name VARCHAR(255), command VARCHAR(255), args VARCHAR(255), on BIT, PRIMARY KEY(id))");
+            stmt.execute("CREATE TABLE IF NOT EXISTS " + primaryTableName + "(id BIGINT NOT NULL AUTO_INCREMENT, server VARCHAR(255), group_name VARCHAR(255), command VARCHAR(255), args VARCHAR(255), on BIT(8), PRIMARY KEY(id))");
         }
     }
 
