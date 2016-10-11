@@ -26,7 +26,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import com.lupinenetwork.commandwhitelister.Constants;
-import java.util.regex.Pattern;
 import org.json.JSONArray;
 
 /**
@@ -73,7 +72,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
      */
     protected final void initializeDatabase() throws SQLException {
         try (Statement stmt = conn.createStatement()) {
-            stmt.execute("CREATE TABLE IF NOT EXISTS " + primaryTableName + "(id BIGINT NOT NULL AUTO_INCREMENT, server VARCHAR(255), group_name VARCHAR(255), command VARCHAR(255), args VARCHAR(255), PRIMARY KEY(id))");
+            stmt.execute("CREATE TABLE IF NOT EXISTS " + primaryTableName + "(id BIGINT NOT NULL AUTO_INCREMENT, server VARCHAR(255), group_name VARCHAR(255), command VARCHAR(255), args VARCHAR(255), on BIT, PRIMARY KEY(id))");
         }
     }
 
@@ -116,7 +115,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
     public List<String> get(String server, String command, List<String> args) throws WhitelistDatabaseException {
         List<String> ret = new ArrayList<>();
 
-        try (PreparedStatement stmt = conn.prepareStatement("SELECT group_name, args FROM " + primaryTableName + " WHERE "
+        try (PreparedStatement stmt = conn.prepareStatement("SELECT group_name, args, on FROM " + primaryTableName + " WHERE "
                         + "(server = ?)"
                         + "AND (? REGEXP command)")) {
             stmt.setString(1, server);
@@ -125,6 +124,9 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                 // Check if each row's arguments match the args parameter
                 // If they do, add it to ret
                 while (rs.next()) {
+                    if (!rs.getBoolean("on"))
+                        return new ArrayList<>();
+                    
                     List<String> rowArgs = getArguments(rs);
 
                     // If args starts with rowArgs
@@ -157,31 +159,42 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
             stmt.setString(1, server);
             stmt.setString(2, group);
             stmt.setString(3, command);
+            
             try (ResultSet similar = stmt.executeQuery()) {
                 if (on) {
-                    while (similar.next()) {
+                    while (similar.next())
                         if (getArguments(similar).equals(args))
                             return;
-                    }
 
                     similar.beforeFirst();
 
                     // Insert everything
-                    try (PreparedStatement insert = conn.prepareStatement("INSERT INTO " + primaryTableName + "(server, group_name, command, args) VALUES (?, ?, ?, ?)")) {
+                    try (PreparedStatement insert = conn.prepareStatement("INSERT INTO " + primaryTableName + "(server, group_name, command, args, on) VALUES (?, ?, ?, ?, ?)")) {
                         insert.setString(1, server);
                         insert.setString(2, group);
                         insert.setString(3, command);
                         insert.setString(4, JSONEncode(args));
+                        insert.setBoolean(5, on);
 
                         insert.execute();
                     }
                 } else {
-                    try (PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?) AND (args = ?)")) {
+                    try (PreparedStatement delete = conn.prepareStatement("DELETE FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?) AND (args = ?) AND (on = ?)")) {
                         delete.setString(1, server);
                         delete.setString(2, group);
                         delete.setString(3, command);
                         delete.setString(4, JSONEncode(args));
+                        delete.setBoolean(5, true);
                         delete.execute();
+                    }
+                    
+                    try (PreparedStatement insert = conn.prepareStatement("INSERT INTO " + primaryTableName + "VALUES (?, ?, ?, ?, ?)")) {
+                       insert.setString(1, server);
+                       insert.setString(2, group);
+                       insert.setString(3, command);
+                       insert.setString(4, JSONEncode(args));
+                       insert.setBoolean(5, false);
+                       insert.execute();
                     }
                 }
             }
