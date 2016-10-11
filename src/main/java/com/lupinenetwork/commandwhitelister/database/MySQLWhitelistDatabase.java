@@ -131,11 +131,6 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                     if (args.size() >= rowArgs.size()) {
                         boolean allow = true;
                         
-                        Pattern[] argsPatterns = new Pattern[rowArgs.size()];
-                        
-                        for (int i = 0; i < argsPatterns.length; i++)
-                            argsPatterns[i] = Pattern.compile(rowArgs.get(i));
-                        
                         for (int i = 0; i < rowArgs.size(); i++) {
                             if (!args.get(i).matches("^" + (rowArgs.get(i).equals("*") ? ".*" : rowArgs.get(i)) + "$")) {
                                 allow = false;

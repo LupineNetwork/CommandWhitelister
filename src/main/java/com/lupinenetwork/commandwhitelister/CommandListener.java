@@ -59,22 +59,15 @@ public class CommandListener implements Listener {
         if (evt.getMessage().trim().charAt(0) != '/')
             return;
         
-        System.err.println(evt.getMessage().trim());
-        System.err.println(evt.getMessage().trim().substring(1));
-        
         String cmd = evt.getMessage().trim().substring(1); // Remove leading slash
         String[] split = cmd.split("\\s+");
-        
-        System.err.println(Arrays.toString(split));
         
         String label = split[0];
         List<String> args = Arrays.asList(split).subList(1, split.length);
         
         List<String> allows;
         try {
-            player.sendMessage(new TextComponent("Server name is " + player.getServer().getInfo().getName()));
             allows = database.get(player.getServer().getInfo().getName(), label, args);
-            player.sendMessage(new TextComponent(allows.toString()));
         } catch (WhitelistDatabaseException ex) {
             throw new RuntimeException(ex);
         }
