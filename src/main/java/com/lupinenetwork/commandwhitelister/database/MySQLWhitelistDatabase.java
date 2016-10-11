@@ -26,6 +26,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import com.lupinenetwork.commandwhitelister.Constants;
+import java.util.HashMap;
+import java.util.Map;
 import org.json.JSONArray;
 
 /**
@@ -112,8 +114,8 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
     }
 
     @Override
-    public List<String> get(String server, String command, List<String> args) throws WhitelistDatabaseException {
-        List<String> ret = new ArrayList<>();
+    public Map<String, Boolean> get(String server, String command, List<String> args) throws WhitelistDatabaseException {
+        Map<String, Boolean> ret = new HashMap<>();
 
         try (PreparedStatement stmt = conn.prepareStatement("SELECT group_name, args, on FROM " + primaryTableName + " WHERE "
                         + "(server = ?)"
@@ -125,7 +127,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                 // If they do, add it to ret
                 while (rs.next()) {
                     if (!rs.getBoolean("on"))
-                        return new ArrayList<>();
+                        ret.put(rs.getString("group_name"), false);
                     
                     List<String> rowArgs = getArguments(rs);
 
@@ -142,7 +144,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                         
                         if (allow)
                             // Add it
-                            ret.add(rs.getString("group_name"));
+                            ret.put(rs.getString("group_name"), true);
                     }
                 }
             }

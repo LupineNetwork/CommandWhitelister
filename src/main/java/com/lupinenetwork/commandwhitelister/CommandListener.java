@@ -21,6 +21,7 @@ import net.md_5.bungee.api.plugin.Listener;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabase;
 import com.lupinenetwork.commandwhitelister.database.WhitelistDatabaseException;
 import java.util.Arrays;
+import java.util.Map;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.Connection;
@@ -65,17 +66,26 @@ public class CommandListener implements Listener {
         String label = split[0];
         List<String> args = Arrays.asList(split).subList(1, split.length);
         
-        List<String> allows;
+        Map<String, Boolean> allows;
         try {
             allows = database.get(player.getServer().getInfo().getName(), label, args);
         } catch (WhitelistDatabaseException ex) {
             throw new RuntimeException(ex);
         }
         
-        boolean allow = label.equals("commandwhitelister")
-                || allows.stream()
+        boolean allow = true;
+        
+        String[] matchingKeys = (String[]) allows.keySet().stream()
                 .filter(group -> group.equals("*") || player.hasPermission("group." + group))
-                        .toArray().length != 0;
+                .toArray();
+        
+        for (String s : matchingKeys) {
+            if (allows.get(s).equals(false))
+                allow = false;
+        }
+        
+        if (label.equals("commandwhitelister"))
+            allow = true;
 
         if (!allow) {
             evt.setCancelled(true);

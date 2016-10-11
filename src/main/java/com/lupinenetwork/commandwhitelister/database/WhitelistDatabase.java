@@ -17,6 +17,7 @@
 package com.lupinenetwork.commandwhitelister.database;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * A contract for a database class.
@@ -34,7 +35,7 @@ public interface WhitelistDatabase extends AutoCloseable {
      * @return a list of groups for which the result is valid for
      * @throws WhitelistDatabaseException if there is an error with the database
      */
-    public List<String> get(String world, String command, List<String> args) throws WhitelistDatabaseException;
+    public Map<String, Boolean> get(String world, String command, List<String> args) throws WhitelistDatabaseException;
     /**
      * Sets a value in the database.
      * 
