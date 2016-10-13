@@ -36,20 +36,19 @@ import org.json.JSONArray;
  * @author Moses Miller &lt;Majora320@gmail.com&gt;
  */
 public class MySQLWhitelistDatabase implements WhitelistDatabase {
-    private Connection conn;
+    private String url;
+    private String username;
+    private String password;
     private String primaryTableName;
-
-    public MySQLWhitelistDatabase(Connection conn) {
-        this.conn = conn;
-    }
 
     public MySQLWhitelistDatabase(String url, String username, String password, String primaryTableName, Driver driver) throws WhitelistDatabaseException {
         this.primaryTableName = primaryTableName;
-
+        this.url = url;
+        this.username = username;
+        this.password = password;
+        
         try {
             DriverManager.registerDriver(driver);
-            conn = DriverManager.getConnection(url, username, password);
-            initializeDatabase();
         } catch (SQLException ex) {
             throw new WhitelistDatabaseException(ex);
         }
@@ -57,11 +56,12 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
 
     public MySQLWhitelistDatabase(String url, String username, String primaryTableName, String password) throws WhitelistDatabaseException {
         this.primaryTableName = primaryTableName;
-
+        this.url = url;
+        this.username = username;
+        this.password = password;
+        
         try {
             DriverManager.registerDriver(Constants.getDefaultDriver()); // Default driver
-            conn = DriverManager.getConnection(url, username, password);
-            initializeDatabase();
         } catch (SQLException ex) {
             throw new WhitelistDatabaseException(ex);
         }
@@ -70,14 +70,21 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
     /**
      * Do the boilerplate required to setup tables, etc.
      *
+     * @param conn the connection to operate on
      * @throws SQLException if there is an error with the database
      */
-    protected final void initializeDatabase() throws SQLException {
+    protected final void initializeDatabase(Connection conn) throws SQLException {
         try (Statement stmt = conn.createStatement()) {
             stmt.execute("CREATE TABLE IF NOT EXISTS " + primaryTableName + "(id BIGINT NOT NULL AUTO_INCREMENT, server VARCHAR(255), group_name VARCHAR(255), command VARCHAR(255), args VARCHAR(255), is_on BIT(8), PRIMARY KEY(id))");
         }
     }
-
+    
+    protected final Connection openConnection() throws SQLException {
+        Connection conn = DriverManager.getConnection(url, username, password);
+        initializeDatabase(conn);
+        return conn;
+    }
+    
     /**
      * Inserts a list of arguments into the database.
      *
@@ -116,8 +123,9 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
     @Override
     public Map<String, Boolean> get(String server, String command, List<String> args) throws WhitelistDatabaseException {
         Map<String, Boolean> ret = new HashMap<>();
-
-        try (PreparedStatement stmt = conn.prepareStatement("SELECT group_name, args, is_on FROM " + primaryTableName + " WHERE "
+        
+        try (Connection conn = openConnection();
+                PreparedStatement stmt = conn.prepareStatement("SELECT group_name, args, is_on FROM " + primaryTableName + " WHERE "
                         + "((server = ?) OR (server = '*'))"
                         + "AND (? REGEXP command)")) {
             stmt.setString(1, server);
@@ -159,7 +167,8 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
 
     @Override
     public void set(boolean on, String server, String group, String command, List<String> args) throws WhitelistDatabaseException {
-        try (PreparedStatement stmt = conn.prepareStatement("SELECT args, is_on FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?)")) {
+        try (Connection conn = openConnection();
+                PreparedStatement stmt = conn.prepareStatement("SELECT args, is_on FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?)")) {
             stmt.setString(1, server);
             stmt.setString(2, group);
             stmt.setString(3, command);
@@ -214,23 +223,6 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                     }
                 }
             }
-        } catch (SQLException ex) {
-            throw new WhitelistDatabaseException(ex);
-        }
-    }
-
-    @Override
-    public void close() throws WhitelistDatabaseException {
-        try {
-            conn.close();
-        } catch (SQLException ex) {
-            throw new WhitelistDatabaseException(ex);
-        }
-    }
-
-    public boolean isClosed() throws WhitelistDatabaseException {
-        try {
-            return conn.isClosed();
         } catch (SQLException ex) {
             throw new WhitelistDatabaseException(ex);
         }

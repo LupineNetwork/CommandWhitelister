@@ -81,13 +81,4 @@ public class Main extends Plugin {
         getProxy().getPluginManager().registerListener(this, new CommandListener(database, config));
         getProxy().getPluginManager().registerCommand(this, new WhitelistCommand(database));
     }
-    
-    @Override
-    public void onDisable() {
-        try {
-            database.close();
-        } catch (Exception ex) {
-            getProxy().getLogger().log(Level.SEVERE, "Failed to close the connection to the database!", ex);
-        }
-    }
 }

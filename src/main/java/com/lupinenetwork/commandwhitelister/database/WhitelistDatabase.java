@@ -25,7 +25,7 @@ import java.util.Map;
  * 
  * @author Moses Miller &lt;Majora320@gmail.com&gt;
  */
-public interface WhitelistDatabase extends AutoCloseable {
+public interface WhitelistDatabase {
     /**
      * Grabs a result from the database.
      * 
