@@ -79,13 +79,13 @@ public class CommandListener implements Listener {
                 .filter(group -> group.equals("*") || player.hasPermission("group." + group))
                 .toArray(String[]::new);
         
-        for (String s : matchingKeys) {
-            if (allows.get(s).equals(false))
-                allow = false;
-        }
-        
-        if (label.equals("commandwhitelister") || matchingKeys.length != 0)
+        if (label.equals("commandwhitelister") || matchingKeys.length != 0) {
             allow = true;
+            
+            for (String s : matchingKeys)
+                if (allows.get(s).equals(false))
+                    allow = false;
+        }
 
         if (!allow) {
             evt.setCancelled(true);
