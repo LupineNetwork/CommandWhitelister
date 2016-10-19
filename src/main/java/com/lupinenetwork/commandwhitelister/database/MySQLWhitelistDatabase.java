@@ -42,10 +42,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
     private String primaryTableName;
 
     public MySQLWhitelistDatabase(String url, String username, String password, String primaryTableName, Driver driver) throws WhitelistDatabaseException {
-        this.primaryTableName = primaryTableName;
-        this.url = url;
-        this.username = username;
-        this.password = password;
+        init(url, username, password, primaryTableName);
         
         try {
             DriverManager.registerDriver(driver);
@@ -55,10 +52,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
     }
 
     public MySQLWhitelistDatabase(String url, String username, String password, String primaryTableName) throws WhitelistDatabaseException {
-        this.primaryTableName = primaryTableName;
-        this.url = url;
-        this.username = username;
-        this.password = password;
+        init(url, username, password, primaryTableName);
         
         try {
             DriverManager.registerDriver(Constants.getDefaultDriver()); // Default driver
@@ -66,7 +60,14 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
             throw new WhitelistDatabaseException(ex);
         }
     }
-
+    
+    private void init(String url, String username, String password, String primaryTableName) {
+        this.primaryTableName = primaryTableName;
+        this.url = url;
+        this.username = username;
+        this.password = password;
+    }
+    
     /**
      * Do the boilerplate required to setup tables, etc.
      *
