@@ -172,7 +172,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                 PreparedStatement stmt = conn.prepareStatement("SELECT args, is_on FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?)")) {
             stmt.setString(1, server);
             stmt.setString(2, group);
-            stmt.setString(3, "^" + command + "$");
+            stmt.setString(3, command);
             
             try (ResultSet similar = stmt.executeQuery()) {
                 if (on) {
@@ -196,7 +196,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                     try (PreparedStatement insert = conn.prepareStatement("INSERT INTO " + primaryTableName + "(server, group_name, command, args, is_on) VALUES (?, ?, ?, ?, ?)")) {
                         insert.setString(1, server);
                         insert.setString(2, group);
-                        insert.setString(3, command);
+                        insert.setString(3, "^" + (command.equals("*") ? ".*" : command) + "$");
                         insert.setString(4, JSONEncode(args));
                         insert.setBoolean(5, true);
 
@@ -216,7 +216,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                     try (PreparedStatement insert = conn.prepareStatement("INSERT INTO " + primaryTableName + "(server, group_name, command, args, is_on) VALUES (?, ?, ?, ?, ?)")) {
                        insert.setString(1, server);
                        insert.setString(2, group);
-                       insert.setString(3, command);
+                       insert.setString(3, "^" + (command.equals("*") ? ".*" : command) + "$");
                        insert.setString(4, JSONEncode(args));
                        insert.setBoolean(5, false);
                        
