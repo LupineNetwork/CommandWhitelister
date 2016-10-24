@@ -130,7 +130,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                         + "((server = ?) OR (server = '*'))"
                         + "AND (? REGEXP command)")) {
             stmt.setString(1, server);
-            stmt.setString(2, "^" + (command.equals("*") ? ".*" : command) + "$");
+            stmt.setString(2, command);
             try (ResultSet rs = stmt.executeQuery()) {
                 // Check if each row's arguments match the args parameter
                 // If they do, add it to ret
@@ -172,7 +172,7 @@ public class MySQLWhitelistDatabase implements WhitelistDatabase {
                 PreparedStatement stmt = conn.prepareStatement("SELECT args, is_on FROM " + primaryTableName + " WHERE (server = ?) AND (group_name = ?) AND (command = ?)")) {
             stmt.setString(1, server);
             stmt.setString(2, group);
-            stmt.setString(3, command);
+            stmt.setString(3, "^" + command + "$");
             
             try (ResultSet similar = stmt.executeQuery()) {
                 if (on) {
